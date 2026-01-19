@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Spinning Cube</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .scene {
+            width: 200px;
+            height: 200px;
+            perspective: 600px;
+            cursor: grab;
+        }
+
+        .scene:active {
+            cursor: grabbing;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(30deg);
+        }
+
+        .face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            backface-visibility: visible;
+        }
+
+        .front {
+            background: rgba(255, 107, 107, 0.8);
+            transform: translateZ(100px);
+        }
+
+        .back {
+            background: rgba(78, 205, 196, 0.8);
+            transform: rotateY(180deg) translateZ(100px);
+        }
+
+        .right {
+            background: rgba(69, 183, 209, 0.8);
+            transform: rotateY(90deg) translateZ(100px);
+        }
+
+        .left {
+            background: rgba(150, 111, 214, 0.8);
+            transform: rotateY(-90deg) translateZ(100px);
+        }
+
+        .top {
+            background: rgba(247, 215, 148, 0.8);
+            transform: rotateX(90deg) translateZ(100px);
+        }
+
+        .bottom {
+            background: rgba(119, 221, 119, 0.8);
+            transform: rotateX(-90deg) translateZ(100px);
+        }
+
+        .instructions {
+            position: fixed;
+            bottom: 30px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .velocity-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="scene" id="scene">
+        <div class="cube" id="cube">
+            <div class="face front">Front</div>
+            <div class="face back">Back</div>
+            <div class="face right">Right</div>
+            <div class="face left">Left</div>
+            <div class="face top">Top</div>
+            <div class="face bottom">Bottom</div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        Click and drag to flick the cube • Release to let it spin
+    </div>
+
+    <div class="velocity-display" id="velocity"></div>
+
+    <script>
+        const cube = document.getElementById('cube');
+        const scene = document.getElementById('scene');
+        const velocityDisplay = document.getElementById('velocity');
+
+        // Rotation state
+        let rotationX = -20;
+        let rotationY = 30;
+
+        // Velocity state (degrees per frame)
+        let velocityX = 0;
+        let velocityY = 0.5; // Initial slow spin
+
+        // Drag state
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let lastTime = 0;
+
+        // Track recent movements for velocity calculation
+        const recentMovements = [];
+        const maxMovements = 5;
+
+        // Physics constants
+        const friction = 0.98;
+        const minVelocity = 0.01;
+        const sensitivity = 0.4;
+        const flickMultiplier = 0.8;
+
+        function updateCube() {
+            cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+        }
+
+        function getEventPosition(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function startDrag(e) {
+            e.preventDefault();
+            isDragging = true;
+            const pos = getEventPosition(e);
+            lastMouseX = pos.x;
+            lastMouseY = pos.y;
+            lastTime = performance.now();
+            recentMovements.length = 0;
+
+            // Stop current momentum when grabbing
+            velocityX = 0;
+            velocityY = 0;
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const pos = getEventPosition(e);
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+
+            const deltaX = pos.x - lastMouseX;
+            const deltaY = pos.y - lastMouseY;
+
+            // Update rotation directly while dragging
+            rotationY += deltaX * sensitivity;
+            rotationX -= deltaY * sensitivity;
+
+            // Store movement for velocity calculation
+            if (deltaTime > 0) {
+                recentMovements.push({
+                    dx: deltaX,
+                    dy: deltaY,
+                    dt: deltaTime
+                });
+
+                // Keep only recent movements
+                if (recentMovements.length > maxMovements) {
+                    recentMovements.shift();
+                }
+            }
+
+            lastMouseX = pos.x;
+            lastMouseY = pos.y;
+            lastTime = currentTime;
+
+            updateCube();
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+
+            // Calculate average velocity from recent movements
+            if (recentMovements.length > 0) {
+                let totalDx = 0;
+                let totalDy = 0;
+                let totalDt = 0;
+
+                for (const movement of recentMovements) {
+                    totalDx += movement.dx;
+                    totalDy += movement.dy;
+                    totalDt += movement.dt;
+                }
+
+                if (totalDt > 0) {
+                    // Convert to velocity (degrees per 16ms frame)
+                    const frameTime = 16;
+                    velocityY = (totalDx / totalDt) * frameTime * flickMultiplier;
+                    velocityX = -(totalDy / totalDt) * frameTime * flickMultiplier;
+                }
+            }
+        }
+
+        // Mouse events
+        scene.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', endDrag);
+
+        // Touch events
+        scene.addEventListener('touchstart', startDrag, { passive: false });
+        document.addEventListener('touchmove', drag, { passive: false });
+        document.addEventListener('touchend', endDrag);
+
+        // Animation loop
+        function animate() {
+            if (!isDragging) {
+                // Apply velocity
+                rotationX += velocityX;
+                rotationY += velocityY;
+
+                // Apply friction
+                velocityX *= friction;
+                velocityY *= friction;
+
+                // Stop very small velocities
+                if (Math.abs(velocityX) < minVelocity) velocityX = 0;
+                if (Math.abs(velocityY) < minVelocity) velocityY = 0;
+
+                updateCube();
+            }
+
+            // Update velocity display
+            const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+            velocityDisplay.textContent = `Speed: ${speed.toFixed(2)}`;
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        updateCube();
+        animate();
+    </script>
+</body>
+</html>
