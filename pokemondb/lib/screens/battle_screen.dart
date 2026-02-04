@@ -1008,12 +1008,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
                         padding: const EdgeInsets.only(bottom: 3),
                         child: Text(child.displayTrigger, style: TextStyle(fontSize: 8, color: theme.colorScheme.onSurface.withOpacity(0.4))),
                       ),
-                    _buildEvoTile(slot, child, currentId, color, theme, isDark),
-                    if (child.evolvesTo.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: _buildEvoNode(slot, child, currentId, color, theme, isDark),
-                      ),
+                    _buildEvoNode(slot, child, currentId, color, theme, isDark),
                   ],
                 ),
               );

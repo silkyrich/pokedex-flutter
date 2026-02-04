@@ -63,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ? typeParam.split(',').where((t) => t.isNotEmpty).toSet()
         : <String>{};
     final moveParam = uri.queryParameters['move'];
-    final genParam = int.tryParse(uri.queryParameters['gen'] ?? '') ?? 0;
+    final genRaw = int.tryParse(uri.queryParameters['gen'] ?? '') ?? 0;
+    final genParam = _genRanges.containsKey(genRaw) ? genRaw : 0;
     final sortParam = uri.queryParameters['sort'] ?? 'number';
 
     bool needsReload = false;

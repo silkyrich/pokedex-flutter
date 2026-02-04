@@ -6,25 +6,31 @@ class AppColorTheme {
   final String id;
   final String label;
   final Color seed;
-  final Color accent;
+  final Brightness brightness;
 
   const AppColorTheme({
     required this.id,
     required this.label,
     required this.seed,
-    required this.accent,
+    required this.brightness,
   });
+
+  bool get isDark => brightness == Brightness.dark;
 }
 
 const appColorThemes = [
-  AppColorTheme(id: 'blue', label: 'Ocean', seed: Color(0xFF3B5BA7), accent: Color(0xFFDC3545)),
-  AppColorTheme(id: 'red', label: 'Volcano', seed: Color(0xFFDC3545), accent: Color(0xFFFF8A50)),
-  AppColorTheme(id: 'green', label: 'Forest', seed: Color(0xFF2E7D32), accent: Color(0xFF81C784)),
-  AppColorTheme(id: 'purple', label: 'Ghost', seed: Color(0xFF7B1FA2), accent: Color(0xFFCE93D8)),
-  AppColorTheme(id: 'orange', label: 'Fire', seed: Color(0xFFE65100), accent: Color(0xFFFFAB40)),
-  AppColorTheme(id: 'teal', label: 'Water', seed: Color(0xFF00695C), accent: Color(0xFF4DB6AC)),
-  AppColorTheme(id: 'pink', label: 'Fairy', seed: Color(0xFFEC407A), accent: Color(0xFFF48FB1)),
-  AppColorTheme(id: 'slate', label: 'Steel', seed: Color(0xFF455A64), accent: Color(0xFF90A4AE)),
+  // Light themes
+  AppColorTheme(id: 'ocean', label: 'Ocean', seed: Color(0xFF3B5BA7), brightness: Brightness.light),
+  AppColorTheme(id: 'volcano', label: 'Volcano', seed: Color(0xFFDC3545), brightness: Brightness.light),
+  AppColorTheme(id: 'forest', label: 'Forest', seed: Color(0xFF2E7D32), brightness: Brightness.light),
+  AppColorTheme(id: 'fairy', label: 'Fairy', seed: Color(0xFFEC407A), brightness: Brightness.light),
+  AppColorTheme(id: 'fire', label: 'Fire', seed: Color(0xFFE65100), brightness: Brightness.light),
+  // Dark themes
+  AppColorTheme(id: 'midnight', label: 'Midnight', seed: Color(0xFF5C6BC0), brightness: Brightness.dark),
+  AppColorTheme(id: 'shadow', label: 'Shadow', seed: Color(0xFF7B1FA2), brightness: Brightness.dark),
+  AppColorTheme(id: 'deep-sea', label: 'Deep Sea', seed: Color(0xFF00695C), brightness: Brightness.dark),
+  AppColorTheme(id: 'steel', label: 'Steel', seed: Color(0xFF455A64), brightness: Brightness.dark),
+  AppColorTheme(id: 'ember', label: 'Ember', seed: Color(0xFFBF360C), brightness: Brightness.dark),
 ];
 
 class AppState extends ChangeNotifier {
@@ -32,15 +38,14 @@ class AppState extends ChangeNotifier {
   factory AppState() => _instance;
   AppState._internal();
 
-  // Theme
-  ThemeMode _themeMode = ThemeMode.light;
-  ThemeMode get themeMode => _themeMode;
-
-  String _colorThemeId = 'blue';
+  // Theme — brightness is determined by the selected theme
+  String _colorThemeId = 'ocean';
   String get colorThemeId => _colorThemeId;
   AppColorTheme get colorTheme =>
       appColorThemes.firstWhere((t) => t.id == _colorThemeId,
           orElse: () => appColorThemes.first);
+  ThemeMode get themeMode =>
+      colorTheme.isDark ? ThemeMode.dark : ThemeMode.light;
 
   // Favorites
   final Set<int> _favorites = {};
@@ -71,10 +76,14 @@ class AppState extends ChangeNotifier {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Load theme
-    final isDark = prefs.getBool('dark_mode') ?? false;
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    _colorThemeId = prefs.getString('color_theme') ?? 'blue';
+    // Load theme — migrate old dark_mode pref to new theme system
+    final savedTheme = prefs.getString('color_theme');
+    if (savedTheme != null && appColorThemes.any((t) => t.id == savedTheme)) {
+      _colorThemeId = savedTheme;
+    } else {
+      final wasDark = prefs.getBool('dark_mode') ?? false;
+      _colorThemeId = wasDark ? 'midnight' : 'ocean';
+    }
 
     // Load favorites
     final favList = prefs.getStringList('favorites') ?? [];
@@ -85,13 +94,6 @@ class AppState extends ChangeNotifier {
     _team.addAll(teamList.map(int.parse));
 
     notifyListeners();
-  }
-
-  Future<void> toggleTheme() async {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dark_mode', _themeMode == ThemeMode.dark);
   }
 
   Future<void> setColorTheme(String id) async {
