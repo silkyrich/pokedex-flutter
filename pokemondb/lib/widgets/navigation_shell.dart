@@ -158,7 +158,7 @@ class _MobileDrawer extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'PokédexDB',
+                        'DexDB',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
@@ -167,7 +167,7 @@ class _MobileDrawer extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Pokemon Database',
+                        'Creature Database',
                         style: TextStyle(
                           fontSize: 11,
                           color: colorScheme.onSurface.withOpacity(0.5),
@@ -532,7 +532,7 @@ class _DesktopSidebar extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PokédexDB',
+                            'DexDB',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 18,
@@ -541,7 +541,7 @@ class _DesktopSidebar extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Pokemon Database',
+                            'Creature Database',
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurface.withOpacity(0.5),
@@ -781,7 +781,7 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'PokédexDB',
+                'DexDB',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18,

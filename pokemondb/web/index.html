@@ -10,19 +10,19 @@
 
   <!-- Open Graph defaults (overridden by script below for Pokemon/move URLs) -->
   <meta property="og:type" content="website">
-  <meta property="og:title" id="og-title" content="PokédexDB — Pokémon Database">
+  <meta property="og:title" id="og-title" content="DexDB — Creature Database">
   <meta property="og:description" id="og-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
   <meta property="og:image" id="og-image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
   <meta property="og:url" id="og-url" content="https://silkyrich.github.io/pokedex-flutter/">
-  <meta property="og:site_name" content="PokédexDB">
+  <meta property="og:site_name" content="DexDB">
 
   <!-- Twitter Card defaults -->
   <meta name="twitter:card" id="tw-card" content="summary">
-  <meta name="twitter:title" id="tw-title" content="PokédexDB — Pokémon Database">
+  <meta name="twitter:title" id="tw-title" content="DexDB — Creature Database">
   <meta name="twitter:description" id="tw-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
   <meta name="twitter:image" id="tw-image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
 
-  <title>PokédexDB — Pokémon Database</title>
+  <title>DexDB — Creature Database</title>
 
   <!-- Set context-sensitive meta tags based on URL path -->
   <script>
@@ -35,7 +35,7 @@
       if (pokemonMatch) {
         var id = pokemonMatch[1];
         var artUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
-        var title = 'Pokémon #' + id + ' — PokédexDB';
+        var title = 'Pokémon #' + id + ' — DexDB';
         var desc = 'View stats, moves, abilities, evolution chain, and type matchups for Pokémon #' + id + '.';
 
         document.getElementById('og-title').content = title;
@@ -54,7 +54,7 @@
       var moveMatch = path.match(/^\/moves\/(.+)$/);
       if (moveMatch) {
         var name = moveMatch[1].replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        var mTitle = name + ' — Move — PokédexDB';
+        var mTitle = name + ' — Move — DexDB';
         var mDesc = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
 
         document.getElementById('og-title').content = mTitle;
@@ -71,7 +71,7 @@
       if (typeMatch) {
         var atk = typeMatch[1].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
         var def = typeMatch[2].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        var tTitle = atk + ' vs ' + def + ' — Type Matchup — PokédexDB';
+        var tTitle = atk + ' vs ' + def + ' — Type Matchup — DexDB';
         document.getElementById('og-title').content = tTitle;
         document.getElementById('og-url').content = base + path;
         document.getElementById('tw-title').content = tTitle;

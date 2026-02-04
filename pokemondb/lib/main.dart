@@ -110,7 +110,7 @@ class PokemonDbApp extends StatelessWidget {
       listenable: AppState(),
       builder: (context, _) {
         return MaterialApp.router(
-          title: 'PokédexDB',
+          title: 'DexDB',
           debugShowCheckedModeBanner: false,
           themeMode: AppState().themeMode,
           theme: _buildLightTheme(),
