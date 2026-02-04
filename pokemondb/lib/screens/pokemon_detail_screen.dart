@@ -592,12 +592,20 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
               ),
             if (showLevel) const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                m.displayName,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                  fontSize: 14,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () => context.go('/moves/${m.name}'),
+                  child: Text(
+                    m.displayName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                      decorationColor: theme.colorScheme.primary.withOpacity(0.3),
+                    ),
+                  ),
                 ),
               ),
             ),
