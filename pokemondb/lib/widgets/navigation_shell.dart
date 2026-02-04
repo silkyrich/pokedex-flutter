@@ -279,8 +279,16 @@ class _MobileDrawer extends StatelessWidget {
               ),
             ),
 
-            // Bottom: search + theme
+            // Bottom: about + search + theme
             const Divider(height: 1),
+            _DrawerItem(
+              item: const _NavItem('/about', 'About & Legal', Icons.info_outline_rounded, Icons.info_rounded),
+              isActive: _isActive('/about'),
+              onTap: () {
+                Navigator.of(context).pop();
+                context.go('/about');
+              },
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
@@ -412,6 +420,64 @@ class _DrawerBottomButton extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  const _SidebarButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.colorScheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? colorScheme.primary.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: isActive
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withOpacity(0.5)),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 13,
+                    color: isActive
+                        ? colorScheme.primary
+                        : colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -620,33 +686,19 @@ class _DesktopSidebar extends StatelessWidget {
 
           // Bottom actions
           const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () => context.go('/search'),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, size: 20, color: colorScheme.onSurface.withOpacity(0.5)),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Search',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 13,
-                          color: colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          _SidebarButton(
+            icon: Icons.info_outline_rounded,
+            label: 'About & Legal',
+            isActive: _isActive('/about'),
+            colorScheme: colorScheme,
+            onTap: () => context.go('/about'),
+          ),
+          _SidebarButton(
+            icon: Icons.search,
+            label: 'Search',
+            isActive: _isActive('/search'),
+            colorScheme: colorScheme,
+            onTap: () => context.go('/search'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),

@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Filter state — all synced from URL
   int _selectedGen = 0;
-  String? _filterType;
+  Set<String> _filterTypes = {};
   String? _filterMove;
   String? _filterMoveDisplay;
   Set<int>? _moveFilterIds;
@@ -59,6 +59,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
     final uri = GoRouterState.of(context).uri;
     final typeParam = uri.queryParameters['type'];
+    final typesParam = typeParam != null
+        ? typeParam.split(',').where((t) => t.isNotEmpty).toSet()
+        : <String>{};
     final moveParam = uri.queryParameters['move'];
     final genParam = int.tryParse(uri.queryParameters['gen'] ?? '') ?? 0;
     final sortParam = uri.queryParameters['sort'] ?? 'number';
@@ -82,8 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
         needsReload = true;
       }
     }
-    if (typeParam != _filterType) {
-      _filterType = typeParam;
+    if (!_setEquals(typesParam, _filterTypes)) {
+      _filterTypes = typesParam;
       needsReload = true;
     }
     if (moveParam != _filterMove) {
@@ -111,14 +114,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _navigate({int? gen, String? type, String? move, String? sort, bool clearType = false, bool clearMove = false}) {
+  bool _setEquals(Set<String> a, Set<String> b) {
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
+  }
+
+  void _navigate({int? gen, Set<String>? types, String? move, String? sort, bool clearTypes = false, bool clearMove = false}) {
     final g = gen ?? _selectedGen;
-    final t = clearType ? null : (type ?? _filterType);
+    final t = clearTypes ? <String>{} : (types ?? _filterTypes);
     final m = clearMove ? null : (move ?? _filterMove);
     final s = sort ?? _sortBy;
     final params = <String>[];
     if (g != 0) params.add('gen=$g');
-    if (t != null) params.add('type=$t');
+    if (t.isNotEmpty) params.add('type=${t.join(',')}');
     if (m != null) params.add('move=$m');
     if (s != 'number') params.add('sort=$s');
     context.go(params.isEmpty ? '/' : '/?${params.join('&')}');
@@ -127,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int get _activeFilterCount {
     int count = 0;
     if (_selectedGen != 0) count++;
-    if (_filterType != null) count++;
+    count += _filterTypes.length;
     if (_filterMove != null) count++;
     return count;
   }
@@ -200,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final id = ids[i];
       final types = d?.types.map((t) => t.name).toList();
 
-      if (_filterType != null && types != null && !types.contains(_filterType)) {
+      if (_filterTypes.isNotEmpty && types != null && !_filterTypes.every((ft) => types.contains(ft))) {
         continue;
       }
       if (_moveFilterIds != null && !_moveFilterIds!.contains(id)) {
@@ -316,12 +324,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: colorScheme.primary,
                         onRemove: () => _navigate(gen: 0),
                       ),
-                    if (_filterType != null)
+                    for (final type in _filterTypes)
                       _ActiveFilter(
-                        label: _filterType![0].toUpperCase() + _filterType!.substring(1),
-                        color: TypeColors.getColor(_filterType!),
-                        textColor: TypeColors.getTextColor(_filterType!),
-                        onRemove: () => _navigate(clearType: true),
+                        label: type[0].toUpperCase() + type.substring(1),
+                        color: TypeColors.getColor(type),
+                        textColor: TypeColors.getTextColor(type),
+                        onRemove: () {
+                          final updated = Set<String>.from(_filterTypes)..remove(type);
+                          _navigate(types: updated);
+                        },
                       ),
                     if (_filterMove != null)
                       _ActiveFilter(
@@ -341,17 +352,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   firstChild: const SizedBox(width: double.infinity),
                   secondChild: _FilterPanel(
                     selectedGen: _selectedGen,
-                    filterType: _filterType,
+                    filterTypes: _filterTypes,
                     filterMove: _filterMove,
                     sortBy: _sortBy,
                     loadingMoveFilter: _loadingMoveFilter,
                     onGenSelected: (gen) => _navigate(gen: gen),
-                    onTypeSelected: (type) {
-                      if (_filterType == type) {
-                        _navigate(clearType: true);
+                    onTypeToggled: (type) {
+                      final updated = Set<String>.from(_filterTypes);
+                      if (updated.contains(type)) {
+                        updated.remove(type);
                       } else {
-                        _navigate(type: type);
+                        updated.add(type);
                       }
+                      _navigate(types: updated);
                     },
                     onMoveSelected: (move) => _navigate(move: move),
                     onMoveClear: () => _navigate(clearMove: true),
@@ -726,12 +739,12 @@ class _FilterBar extends StatelessWidget {
 
 class _FilterPanel extends StatelessWidget {
   final int selectedGen;
-  final String? filterType;
+  final Set<String> filterTypes;
   final String? filterMove;
   final String sortBy;
   final bool loadingMoveFilter;
   final ValueChanged<int> onGenSelected;
-  final ValueChanged<String> onTypeSelected;
+  final ValueChanged<String> onTypeToggled;
   final ValueChanged<String> onMoveSelected;
   final VoidCallback onMoveClear;
   final ValueChanged<String> onSortChanged;
@@ -739,12 +752,12 @@ class _FilterPanel extends StatelessWidget {
 
   const _FilterPanel({
     required this.selectedGen,
-    required this.filterType,
+    required this.filterTypes,
     required this.filterMove,
     required this.sortBy,
     required this.loadingMoveFilter,
     required this.onGenSelected,
-    required this.onTypeSelected,
+    required this.onTypeToggled,
     required this.onMoveSelected,
     required this.onMoveClear,
     required this.onSortChanged,
@@ -781,7 +794,7 @@ class _FilterPanel extends StatelessWidget {
               const SizedBox(width: 6),
               _SortChip(label: 'BST', value: 'bst', current: sortBy, onTap: () => onSortChanged('bst')),
               const Spacer(),
-              if (selectedGen != 0 || filterType != null || filterMove != null)
+              if (selectedGen != 0 || filterTypes.isNotEmpty || filterMove != null)
                 TextButton.icon(
                   onPressed: onClearAll,
                   icon: Icon(Icons.clear_all_rounded, size: 16, color: colorScheme.error),
@@ -826,8 +839,8 @@ class _FilterPanel extends StatelessWidget {
               for (final type in TypeChart.types)
                 _TypeChip(
                   type: type,
-                  selected: filterType == type,
-                  onTap: () => onTypeSelected(type),
+                  selected: filterTypes.contains(type),
+                  onTap: () => onTypeToggled(type),
                 ),
             ],
           ),
