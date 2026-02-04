@@ -2,7 +2,7 @@ name: Deploy Flutter Web to GitHub Pages
 
 on:
   push:
-    branches: [claude/3d-spinning-cube-BYREQ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
