@@ -25,11 +25,19 @@ final _router = GoRouter(
         return PokemonDetailScreen(pokemonId: id);
       },
     ),
-    GoRoute(path: '/types', builder: (context, state) => const TypeChartScreen()),
-    GoRoute(path: '/moves', builder: (context, state) => const MovesScreen()),
-    GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
-    GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
-    GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
+    GoRoute(
+        path: '/types',
+        builder: (context, state) => const TypeChartScreen()),
+    GoRoute(
+        path: '/moves', builder: (context, state) => const MovesScreen()),
+    GoRoute(
+        path: '/search',
+        builder: (context, state) => const SearchScreen()),
+    GoRoute(
+        path: '/favorites',
+        builder: (context, state) => const FavoritesScreen()),
+    GoRoute(
+        path: '/team', builder: (context, state) => const TeamScreen()),
   ],
 );
 
@@ -51,25 +59,63 @@ class PokemonDbApp extends StatelessWidget {
             colorSchemeSeed: _pokemonBlue,
             brightness: Brightness.light,
             useMaterial3: true,
+            fontFamily: 'Segoe UI',
             cardTheme: CardThemeData(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.grey.shade200),
               ),
+              color: Colors.white,
             ),
+            chipTheme: ChipThemeData(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
+              ),
+            ),
+            dividerTheme: DividerThemeData(
+              color: Colors.grey.shade200,
+              thickness: 1,
+            ),
+            scaffoldBackgroundColor: const Color(0xFFF8F9FA),
           ),
           darkTheme: ThemeData(
             colorSchemeSeed: _pokemonBlue,
             brightness: Brightness.dark,
             useMaterial3: true,
+            fontFamily: 'Segoe UI',
             cardTheme: CardThemeData(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.grey.shade800),
               ),
+              color: const Color(0xFF1E1E2E),
             ),
+            chipTheme: ChipThemeData(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
+              ),
+            ),
+            dividerTheme: DividerThemeData(
+              color: Colors.grey.shade800,
+              thickness: 1,
+            ),
+            scaffoldBackgroundColor: const Color(0xFF121218),
           ),
           routerConfig: _router,
         );
