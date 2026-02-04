@@ -1,8 +1,25 @@
 {
-  "name": "Pokémon Database",
-  "short_name": "PokemonDB",
+  "name": "PokédexDB — Pokémon Database",
+  "short_name": "PokédexDB",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#3b5ba7",
-  "theme_color": "#3b5ba7"
+  "background_color": "#f8f9fa",
+  "theme_color": "#3B5BA7",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
 }
