@@ -34,6 +34,9 @@ class NavigationShell extends StatelessWidget {
       _NavItem('/tools/nuzlocke', 'Nuzlocke Run', Icons.map_outlined, Icons.map),
       _NavItem('/tools/shiny', 'Shiny Hunter', Icons.auto_awesome_outlined, Icons.auto_awesome),
     ]),
+    _DrawerSection('Challenge', [
+      _NavItem('/quiz', 'Quiz', Icons.quiz_outlined, Icons.quiz),
+    ]),
     _DrawerSection('Collection', [
       _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
     ]),
@@ -51,6 +54,7 @@ class NavigationShell extends StatelessWidget {
         location.startsWith('/tools') ||
         location.startsWith('/favorites') ||
         location.startsWith('/search') ||
+        location.startsWith('/quiz') ||
         location.startsWith('/pokemon')) {
       return -1;
     }
