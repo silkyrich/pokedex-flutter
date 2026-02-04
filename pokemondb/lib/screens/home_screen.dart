@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
+import '../models/move.dart';
 import '../services/pokeapi_service.dart';
 import '../widgets/pokemon_card.dart';
 import '../utils/type_colors.dart';
@@ -23,6 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   int _selectedGen = 0;
   String? _filterType;
+  String? _filterMove;
+  String? _filterMoveDisplay;
+  Set<int>? _moveFilterIds;
+  bool _loadingMoveFilter = false;
 
   static const Map<int, List<int>> _genRanges = {
     0: [1, 1025],
@@ -46,11 +51,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Check for type filter from URL query params
     final uri = GoRouterState.of(context).uri;
     final typeParam = uri.queryParameters['type'];
-    if (typeParam != _filterType) {
+    final moveParam = uri.queryParameters['move'];
+    if (typeParam != _filterType || moveParam != _filterMove) {
       _filterType = typeParam;
+      if (moveParam != _filterMove) {
+        _filterMove = moveParam;
+        if (moveParam != null) {
+          _loadMoveFilter(moveParam);
+          return;
+        } else {
+          _moveFilterIds = null;
+          _filterMoveDisplay = null;
+        }
+      }
       _loadInitial();
     } else if (_entries.isEmpty && _loading) {
       _loadInitial();
@@ -121,6 +136,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_filterType != null && types != null && !types.contains(_filterType)) {
         continue;
       }
+      // Apply move filter
+      if (_moveFilterIds != null && !_moveFilterIds!.contains(id)) {
+        continue;
+      }
 
       _entries.add(_PokemonEntry(
         basic: PokemonBasic(id: id, name: d?.name ?? 'pokemon-$id', url: ''),
@@ -142,12 +161,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _clearTypeFilter() {
     _filterType = null;
-    context.go('/');
+    final params = <String>[];
+    if (_filterMove != null) params.add('move=$_filterMove');
+    context.go(params.isEmpty ? '/' : '/?${params.join('&')}');
     _loadInitial();
   }
 
   void _setTypeFilter(String type) {
-    context.go('/?type=$type');
+    final params = <String>['type=$type'];
+    if (_filterMove != null) params.add('move=$_filterMove');
+    context.go('/?${params.join('&')}');
+  }
+
+  Future<void> _loadMoveFilter(String moveName) async {
+    setState(() => _loadingMoveFilter = true);
+    try {
+      final moveDetail = await PokeApiService.getMoveDetail(moveName);
+      _filterMoveDisplay = moveDetail.displayName;
+      _moveFilterIds = moveDetail.learnedByPokemon.map((p) => p.id).toSet();
+    } catch (_) {
+      _moveFilterIds = {};
+      _filterMoveDisplay = moveName.split('-').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
+    }
+    if (mounted) {
+      setState(() => _loadingMoveFilter = false);
+      _loadInitial();
+    }
+  }
+
+  void _clearMoveFilter() {
+    _filterMove = null;
+    _filterMoveDisplay = null;
+    _moveFilterIds = null;
+    final params = <String>[];
+    if (_filterType != null) params.add('type=$_filterType');
+    context.go(params.isEmpty ? '/' : '/?${params.join('&')}');
+    _loadInitial();
   }
 
   @override
@@ -211,31 +260,56 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                   ],
                 ),
-                // Active type filter chip
-                if (_filterType != null) ...[
+                // Active filter chips
+                if (_filterType != null || _filterMove != null) ...[
                   const SizedBox(height: 12),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Icon(Icons.filter_list_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                      const SizedBox(width: 8),
-                      Text('Filtered by type:', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
-                      const SizedBox(width: 8),
-                      Chip(
-                        label: Text(
-                          _filterType![0].toUpperCase() + _filterType!.substring(1),
-                          style: TextStyle(
-                            color: TypeColors.getTextColor(_filterType!),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
+                      Text('Filters:', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                      if (_filterType != null)
+                        Chip(
+                          label: Text(
+                            _filterType![0].toUpperCase() + _filterType!.substring(1),
+                            style: TextStyle(
+                              color: TypeColors.getTextColor(_filterType!),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
                           ),
+                          backgroundColor: TypeColors.getColor(_filterType!),
+                          deleteIcon: Icon(Icons.close, size: 16, color: TypeColors.getTextColor(_filterType!)),
+                          onDeleted: _clearTypeFilter,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          side: BorderSide.none,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
                         ),
-                        backgroundColor: TypeColors.getColor(_filterType!),
-                        deleteIcon: Icon(Icons.close, size: 16, color: TypeColors.getTextColor(_filterType!)),
-                        onDeleted: _clearTypeFilter,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        side: BorderSide.none,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                      ),
+                      if (_filterMove != null)
+                        Chip(
+                          avatar: Icon(Icons.flash_on_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
+                          label: Text(
+                            _filterMoveDisplay ?? _filterMove!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          deleteIcon: Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.primary),
+                          onDeleted: _clearMoveFilter,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          side: BorderSide.none,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        ),
+                      if (_loadingMoveFilter)
+                        SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
+                        ),
                     ],
                   ),
                 ],
@@ -254,6 +328,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 10),
+                // Move filter search
+                _MoveFilterSearch(
+                  currentMove: _filterMove,
+                  onMoveSelected: (moveName) {
+                    final params = <String>[];
+                    if (_filterType != null) params.add('type=$_filterType');
+                    params.add('move=$moveName');
+                    context.go('/?${params.join('&')}');
+                  },
                 ),
                 const SizedBox(height: 10),
                 // Type filter chips
@@ -470,6 +555,181 @@ class _GenChip extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MoveFilterSearch extends StatefulWidget {
+  final String? currentMove;
+  final ValueChanged<String> onMoveSelected;
+
+  const _MoveFilterSearch({this.currentMove, required this.onMoveSelected});
+
+  @override
+  State<_MoveFilterSearch> createState() => _MoveFilterSearchState();
+}
+
+class _MoveFilterSearchState extends State<_MoveFilterSearch> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  List<MoveDetail>? _suggestions;
+  bool _searching = false;
+  bool _showDropdown = false;
+
+  // Cache of loaded moves for searching
+  static List<MoveDetail>? _allMoves;
+  static bool _loadingAllMoves = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) setState(() => _showDropdown = false);
+        });
+      }
+    });
+    _ensureMovesLoaded();
+  }
+
+  Future<void> _ensureMovesLoaded() async {
+    if (_allMoves != null || _loadingAllMoves) return;
+    _loadingAllMoves = true;
+    try {
+      final futures = <Future<MoveDetail>>[];
+      for (int i = 1; i <= 165; i++) {
+        futures.add(PokeApiService.getMoveDetail(i.toString()));
+      }
+      final results = await Future.wait(futures.map((f) => f.catchError((_) => MoveDetail(id: 0, name: ''))));
+      _allMoves = results.where((m) => m.id > 0).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+    } catch (_) {
+      _allMoves = [];
+    }
+    _loadingAllMoves = false;
+  }
+
+  void _onSearch(String query) {
+    if (query.length < 2 || _allMoves == null) {
+      setState(() { _suggestions = null; _showDropdown = false; });
+      return;
+    }
+    final q = query.toLowerCase();
+    final matches = _allMoves!.where((m) =>
+      m.name.contains(q) || m.displayName.toLowerCase().contains(q)
+    ).take(8).toList();
+    setState(() { _suggestions = matches; _showDropdown = matches.isNotEmpty; });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SizedBox(
+      height: 36,
+      child: Row(
+        children: [
+          Icon(Icons.flash_on_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+          const SizedBox(width: 6),
+          Text('Move:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withOpacity(0.5))),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Search moves...',
+                      hintStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                      prefixIcon: const Icon(Icons.search, size: 16),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 32),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5)),
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+                    ),
+                    onChanged: _onSearch,
+                  ),
+                ),
+                if (_showDropdown && _suggestions != null && _suggestions!.isNotEmpty)
+                  Positioned(
+                    top: 40,
+                    left: 0,
+                    right: 0,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 240),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E1E2A) : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          itemCount: _suggestions!.length,
+                          itemBuilder: (_, i) {
+                            final move = _suggestions![i];
+                            return ListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              leading: move.type != null
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: TypeColors.getColor(move.type!),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      move.type!.substring(0, 3).toUpperCase(),
+                                      style: TextStyle(color: TypeColors.getTextColor(move.type!), fontSize: 9, fontWeight: FontWeight.w800),
+                                    ),
+                                  )
+                                : null,
+                              title: Text(move.displayName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              subtitle: Text(
+                                [
+                                  if (move.power != null) 'Pow: ${move.power}',
+                                  if (move.damageClass != null) move.damageClass!,
+                                ].join(' · '),
+                                style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                              ),
+                              onTap: () {
+                                _controller.clear();
+                                setState(() { _suggestions = null; _showDropdown = false; });
+                                _focusNode.unfocus();
+                                widget.onMoveSelected(move.name);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

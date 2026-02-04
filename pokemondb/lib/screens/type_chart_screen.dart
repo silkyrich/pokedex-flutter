@@ -37,7 +37,7 @@ class TypeChartScreen extends StatelessWidget {
                 _buildLegend(theme),
                 const SizedBox(height: 8),
                 Text(
-                  'Tap any type to view all Pokemon of that type.',
+                  'Tap any type label to filter Pokemon. Tap effectiveness cells to explore that matchup.',
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.primary,
@@ -152,7 +152,10 @@ class TypeChartScreen extends StatelessWidget {
           )),
           ...List.generate(types.length, (col) {
             final val = eff[row][col];
-            return DataCell(Center(child: _EffCell(value: val)));
+            return DataCell(Center(child: _EffCell(
+              value: val,
+              onTap: val != 1.0 ? () => context.go('/types/${types[row]}/vs/${types[col]}') : null,
+            )));
           }),
         ]);
       }),
@@ -213,10 +216,18 @@ class _TypeLabelState extends State<_TypeLabel> {
   }
 }
 
-class _EffCell extends StatelessWidget {
+class _EffCell extends StatefulWidget {
   final double value;
+  final VoidCallback? onTap;
 
-  const _EffCell({required this.value});
+  const _EffCell({required this.value, this.onTap});
+
+  @override
+  State<_EffCell> createState() => _EffCellState();
+}
+
+class _EffCellState extends State<_EffCell> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -226,15 +237,15 @@ class _EffCell extends StatelessWidget {
     Color fg;
     String text;
 
-    if (value == 0) {
+    if (widget.value == 0) {
       bg = isDark ? const Color(0xFF333340) : const Color(0xFF333333);
       fg = Colors.white;
       text = '0';
-    } else if (value == 0.5) {
+    } else if (widget.value == 0.5) {
       bg = isDark ? const Color(0xFF7F2520) : const Color(0xFFEF4444);
       fg = Colors.white;
       text = '1/2';
-    } else if (value == 2) {
+    } else if (widget.value == 2) {
       bg = isDark ? const Color(0xFF166534) : const Color(0xFF22C55E);
       fg = Colors.white;
       text = '2';
@@ -244,13 +255,17 @@ class _EffCell extends StatelessWidget {
       text = '';
     }
 
-    return Container(
+    final cell = AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
       width: 32,
       height: 32,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(6),
+        boxShadow: _hovered && widget.onTap != null
+            ? [BoxShadow(color: bg.withOpacity(0.5), blurRadius: 6)]
+            : null,
       ),
       child: Text(
         text,
@@ -261,5 +276,21 @@ class _EffCell extends StatelessWidget {
         ),
       ),
     );
+
+    if (widget.onTap != null) {
+      return MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Tooltip(
+            message: 'View matchup details',
+            child: cell,
+          ),
+        ),
+      );
+    }
+    return cell;
   }
 }
