@@ -1,6 +1,6 @@
 {
-  "name": "PokédexDB — Pokémon Database",
-  "short_name": "PokédexDB",
+  "name": "DexDB — Creature Database",
+  "short_name": "DexDB",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f8f9fa",

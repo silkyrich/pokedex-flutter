@@ -45,14 +45,14 @@ class AboutScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'PokédexDB',
+                          'DexDB',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
                           ),
                         ),
                         Text(
-                          'Pokémon Database',
+                          'Creature Database',
                           style: TextStyle(
                             fontSize: 14,
                             color: colorScheme.onSurface.withOpacity(0.5),
@@ -66,7 +66,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 Text(
-                  'An unofficial fan-built Pokémon database and competitive toolkit. '
+                  'An unofficial fan-built creature database and competitive toolkit. '
                   'Browse every Pokémon, compare stats, calculate damage, build teams, '
                   'and track your collection.',
                   style: TextStyle(

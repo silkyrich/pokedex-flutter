@@ -29,8 +29,6 @@ void main() async {
   runApp(const PokemonDbApp());
 }
 
-const _pokemonRed = Color(0xFFDC3545);
-const _pokemonBlue = Color(0xFF3B5BA7);
 
 final _router = GoRouter(
   routes: [
@@ -109,24 +107,25 @@ class PokemonDbApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: AppState(),
       builder: (context, _) {
+        final ct = AppState().colorTheme;
         return MaterialApp.router(
-          title: 'Pokémon Database',
+          title: 'DexDB',
           debugShowCheckedModeBanner: false,
           themeMode: AppState().themeMode,
-          theme: _buildLightTheme(),
-          darkTheme: _buildDarkTheme(),
+          theme: _buildLightTheme(ct),
+          darkTheme: _buildDarkTheme(ct),
           routerConfig: _router,
         );
       },
     );
   }
 
-  ThemeData _buildLightTheme() {
+  ThemeData _buildLightTheme(AppColorTheme ct) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _pokemonBlue,
+      seedColor: ct.seed,
       brightness: Brightness.light,
-      primary: _pokemonBlue,
-      secondary: _pokemonRed,
+      primary: ct.seed,
+      secondary: ct.accent,
     );
 
     return ThemeData(
@@ -215,12 +214,10 @@ class PokemonDbApp extends StatelessWidget {
     );
   }
 
-  ThemeData _buildDarkTheme() {
+  ThemeData _buildDarkTheme(AppColorTheme ct) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _pokemonBlue,
+      seedColor: ct.seed,
       brightness: Brightness.dark,
-      primary: const Color(0xFF8AABFF),
-      secondary: const Color(0xFFFF7B86),
     );
 
     return ThemeData(
