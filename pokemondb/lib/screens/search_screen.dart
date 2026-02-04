@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../services/pokeapi_service.dart';
-import '../widgets/app_header.dart';
 import '../widgets/pokemon_card.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -15,13 +14,23 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   List<PokemonBasic>? _results;
   bool _searching = false;
   Timer? _debounce;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -54,94 +63,169 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth > 1200
-        ? 8
+        ? 7
         : screenWidth > 900
-            ? 6
+            ? 5
             : screenWidth > 600
                 ? 4
                 : 3;
 
     return Scaffold(
-      appBar: const AppHeader(),
-      backgroundColor: const Color(0xFFF5F5F5),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1000),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Search Pokémon',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFCCCCCC)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+                Text(
+                  'Search Pokemon',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
                   ),
-                  child: TextField(
-                    controller: _controller,
-                    autofocus: true,
-                    onChanged: _onSearchChanged,
-                    decoration: const InputDecoration(
-                      hintText: 'Search by name or number...',
-                      prefixIcon: Icon(Icons.search, color: Color(0xFF999999)),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Find Pokemon by name or Pokedex number.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Search field
+                TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Search by name or number...',
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
                     ),
-                    style: const TextStyle(fontSize: 16),
+                    suffixIcon: _controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: theme.colorScheme.onSurface.withOpacity(0.4),
+                            ),
+                            onPressed: () {
+                              _controller.clear();
+                              setState(() => _results = null);
+                            },
+                          )
+                        : null,
                   ),
+                  style: const TextStyle(fontSize: 16),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 if (_searching)
-                  const Center(child: CircularProgressIndicator(color: Color(0xFF3B5BA7)))
+                  Expanded(
+                    child: Center(
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  )
                 else if (_results != null && _results!.isEmpty)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Text(
-                        'No Pokémon found.',
-                        style: TextStyle(fontSize: 16, color: Color(0xFF999999)),
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 64,
+                            color: theme.colorScheme.onSurface.withOpacity(0.15),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No Pokemon found',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Try a different search term.',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withOpacity(0.3),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
                 else if (_results != null)
                   Expanded(
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        childAspectRatio: 0.85,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: _results!.length.clamp(0, 50),
-                      itemBuilder: (context, index) {
-                        final p = _results![index];
-                        return PokemonCard(
-                          pokemon: p,
-                          onTap: () => context.go('/pokemon/${p.id}'),
-                        );
-                      },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_results!.length > 50 ? "50+" : _results!.length} results',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: GridView.builder(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              childAspectRatio: 0.78,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                            itemCount: _results!.length.clamp(0, 50),
+                            itemBuilder: (context, index) {
+                              final p = _results![index];
+                              return PokemonCard(
+                                pokemon: p,
+                                onTap: () => context.go('/pokemon/${p.id}'),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else
-                  const Expanded(
+                  Expanded(
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.catching_pokemon, size: 80, color: Color(0xFFDDDDDD)),
-                          SizedBox(height: 16),
+                          Icon(
+                            Icons.catching_pokemon,
+                            size: 80,
+                            color: theme.colorScheme.onSurface.withOpacity(0.08),
+                          ),
+                          const SizedBox(height: 20),
                           Text(
-                            'Type a Pokémon name or number to search',
-                            style: TextStyle(color: Color(0xFF999999), fontSize: 15),
+                            'Type a name or number to search',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withOpacity(0.35),
+                              fontSize: 15,
+                            ),
                           ),
                         ],
                       ),

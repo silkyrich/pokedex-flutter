@@ -7,6 +7,7 @@ import 'screens/moves_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/team_screen.dart';
+import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
 void main() async {
@@ -15,25 +16,31 @@ void main() async {
   runApp(const PokemonDbApp());
 }
 
+const _pokemonRed = Color(0xFFDC3545);
+const _pokemonBlue = Color(0xFF3B5BA7);
+
 final _router = GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
-    GoRoute(
-      path: '/pokemon/:id',
-      builder: (context, state) {
-        final id = int.parse(state.pathParameters['id']!);
-        return PokemonDetailScreen(pokemonId: id);
-      },
+    ShellRoute(
+      builder: (context, state, child) => NavigationShell(child: child),
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+        GoRoute(path: '/moves', builder: (context, state) => const MovesScreen()),
+        GoRoute(path: '/types', builder: (context, state) => const TypeChartScreen()),
+        GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
+        GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
+        GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
+        GoRoute(
+          path: '/pokemon/:id',
+          builder: (context, state) {
+            final id = int.parse(state.pathParameters['id']!);
+            return PokemonDetailScreen(pokemonId: id);
+          },
+        ),
+      ],
     ),
-    GoRoute(path: '/types', builder: (context, state) => const TypeChartScreen()),
-    GoRoute(path: '/moves', builder: (context, state) => const MovesScreen()),
-    GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
-    GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
-    GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
   ],
 );
-
-const _pokemonBlue = Color(0xFF3B5BA7);
 
 class PokemonDbApp extends StatelessWidget {
   const PokemonDbApp({super.key});
@@ -47,33 +54,183 @@ class PokemonDbApp extends StatelessWidget {
           title: 'Pokémon Database',
           debugShowCheckedModeBanner: false,
           themeMode: AppState().themeMode,
-          theme: ThemeData(
-            colorSchemeSeed: _pokemonBlue,
-            brightness: Brightness.light,
-            useMaterial3: true,
-            cardTheme: CardThemeData(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.shade200),
-              ),
-            ),
-          ),
-          darkTheme: ThemeData(
-            colorSchemeSeed: _pokemonBlue,
-            brightness: Brightness.dark,
-            useMaterial3: true,
-            cardTheme: CardThemeData(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.shade800),
-              ),
-            ),
-          ),
+          theme: _buildLightTheme(),
+          darkTheme: _buildDarkTheme(),
           routerConfig: _router,
         );
       },
+    );
+  }
+
+  ThemeData _buildLightTheme() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _pokemonBlue,
+      brightness: Brightness.light,
+      primary: _pokemonBlue,
+      secondary: _pokemonRed,
+    );
+
+    return ThemeData(
+      colorScheme: colorScheme,
+      useMaterial3: true,
+      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+      ),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: colorScheme.onSurface,
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: Colors.white,
+        indicatorColor: colorScheme.primary.withOpacity(0.12),
+        selectedIconTheme: IconThemeData(color: colorScheme.primary),
+        unselectedIconTheme: IconThemeData(color: Colors.grey.shade500),
+        selectedLabelTextStyle: TextStyle(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+        unselectedLabelTextStyle: TextStyle(
+          color: Colors.grey.shade500,
+          fontSize: 12,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: colorScheme.primary.withOpacity(0.12),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 12);
+          }
+          return TextStyle(color: Colors.grey.shade500, fontSize: 12);
+        }),
+      ),
+      dividerTheme: DividerThemeData(color: Colors.grey.shade200, space: 1),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
+
+  ThemeData _buildDarkTheme() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _pokemonBlue,
+      brightness: Brightness.dark,
+      primary: const Color(0xFF8AABFF),
+      secondary: const Color(0xFFFF7B86),
+    );
+
+    return ThemeData(
+      colorScheme: colorScheme,
+      useMaterial3: true,
+      scaffoldBackgroundColor: const Color(0xFF121218),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+        ),
+        color: const Color(0xFF1E1E2A),
+        surfaceTintColor: Colors.transparent,
+      ),
+      appBarTheme: const AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        backgroundColor: Color(0xFF1E1E2A),
+        surfaceTintColor: Colors.transparent,
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: const Color(0xFF1E1E2A),
+        indicatorColor: colorScheme.primary.withOpacity(0.15),
+        selectedIconTheme: IconThemeData(color: colorScheme.primary),
+        unselectedIconTheme: IconThemeData(color: Colors.grey.shade600),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: const Color(0xFF1E1E2A),
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: colorScheme.primary.withOpacity(0.15),
+      ),
+      dividerTheme: DividerThemeData(color: Colors.white.withOpacity(0.06), space: 1),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 }

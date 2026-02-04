@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../services/pokeapi_service.dart';
-import '../widgets/app_header.dart';
 import '../widgets/pokemon_card.dart';
+import '../utils/type_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Each entry holds basic info + pre-fetched types
   final List<_PokemonEntry> _entries = [];
   bool _loading = true;
   bool _loadingMore = false;
@@ -23,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _pageSize = 50;
   final ScrollController _scrollController = ScrollController();
   int _selectedGen = 0;
+  String? _filterType;
 
   static const Map<int, List<int>> _genRanges = {
     0: [1, 1025],
@@ -40,8 +40,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadInitial();
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check for type filter from URL query params
+    final uri = GoRouterState.of(context).uri;
+    final typeParam = uri.queryParameters['type'];
+    if (typeParam != _filterType) {
+      _filterType = typeParam;
+      _loadInitial();
+    } else if (_entries.isEmpty && _loading) {
+      _loadInitial();
+    }
   }
 
   @override
@@ -51,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    // Trigger load when within 500px of bottom, guarded by _loadingMore flag
     if (!_loadingMore &&
         _offset < _total &&
         _scrollController.position.pixels >=
@@ -91,7 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Load one batch: fetch details in parallel batches of 10 to get types.
   Future<void> _loadBatch(List<int> range) async {
     final startId = range[0] + _offset;
     final remaining = _total - _offset;
@@ -99,15 +110,21 @@ class _HomeScreenState extends State<HomeScreen> {
     if (count <= 0) return;
 
     final ids = List.generate(count, (i) => startId + i);
-
     final details = await PokeApiService.getPokemonDetailsBatch(ids);
 
     for (int i = 0; i < ids.length; i++) {
       final d = details[i];
       final id = ids[i];
+      final types = d?.types.map((t) => t.name).toList();
+
+      // Apply type filter
+      if (_filterType != null && types != null && !types.contains(_filterType)) {
+        continue;
+      }
+
       _entries.add(_PokemonEntry(
         basic: PokemonBasic(id: id, name: d?.name ?? 'pokemon-$id', url: ''),
-        types: d?.types.map((t) => t.name).toList(),
+        types: types,
       ));
     }
 
@@ -123,45 +140,108 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitial();
   }
 
+  void _clearTypeFilter() {
+    _filterType = null;
+    context.go('/');
+    _loadInitial();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth > 1200
-        ? 8
+        ? 7
         : screenWidth > 900
-            ? 6
+            ? 5
             : screenWidth > 600
                 ? 4
                 : 3;
 
     return Scaffold(
-      appBar: const AppHeader(),
       body: Column(
         children: [
-          // Header bar
+          // Header section
           Container(
-            color: Theme.of(context).colorScheme.surface,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Pokédex',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pokedex',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Browse Pokemon by National Pokedex number.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_entries.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${_entries.length} Pokemon',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Browse Pokémon by National Pokédex number.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                // Active type filter chip
+                if (_filterType != null) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.filter_list_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                      const SizedBox(width: 8),
+                      Text('Filtered by type:', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                      const SizedBox(width: 8),
+                      Chip(
+                        label: Text(
+                          _filterType![0].toUpperCase() + _filterType!.substring(1),
+                          style: TextStyle(
+                            color: TypeColors.getTextColor(_filterType!),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                        backgroundColor: TypeColors.getColor(_filterType!),
+                        deleteIcon: Icon(Icons.close, size: 16, color: TypeColors.getTextColor(_filterType!)),
+                        onDeleted: _clearTypeFilter,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        side: BorderSide.none,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
+                ],
+                const SizedBox(height: 16),
+                // Gen filter chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _GenChip(label: 'All', selected: _selectedGen == 0, onTap: () => _selectGen(0)),
+                      _GenChip(label: 'All Gens', selected: _selectedGen == 0, onTap: () => _selectGen(0)),
                       for (int i = 1; i <= 9; i++)
                         _GenChip(
                           label: 'Gen $i',
@@ -177,13 +257,26 @@ class _HomeScreenState extends State<HomeScreen> {
           // Grid
           Expanded(
             child: _loading
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Loading Pokémon...'),
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Loading Pokemon...',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            fontSize: 15,
+                          ),
+                        ),
                       ],
                     ),
                   )
@@ -192,11 +285,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                            const SizedBox(height: 8),
-                            Text('Error: $_error'),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.error_outline_rounded, size: 40, color: Colors.red),
+                            ),
                             const SizedBox(height: 16),
-                            FilledButton(onPressed: _loadInitial, child: const Text('Retry')),
+                            Text('Something went wrong', style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 8),
+                            Text(
+                              _error!,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                            ),
+                            const SizedBox(height: 20),
+                            FilledButton.icon(
+                              onPressed: _loadInitial,
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text('Try Again'),
+                            ),
                           ],
                         ),
                       )
@@ -204,13 +313,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         controller: _scrollController,
                         slivers: [
                           SliverPadding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                             sliver: SliverGrid(
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                childAspectRatio: 0.82,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
+                                childAspectRatio: 0.78,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
@@ -225,26 +334,47 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
-                          // Loading indicator or "all loaded" message
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 24),
                               child: _loadingMore
-                                  ? const Center(
+                                  ? Center(
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                                          SizedBox(width: 12),
-                                          Text('Loading more Pokémon...'),
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            'Loading more...',
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     )
                                   : _offset >= _total && _entries.isNotEmpty
                                       ? Center(
-                                          child: Text(
-                                            'All ${_entries.length} Pokémon loaded',
-                                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              'All ${_entries.length} Pokemon loaded',
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
                                           ),
                                         )
                                       : const SizedBox.shrink(),
@@ -276,20 +406,45 @@ class _GenChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        selectedColor: colorScheme.primary,
-        labelStyle: TextStyle(
-          color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected
+                  ? colorScheme.primary
+                  : isDark
+                      ? Colors.white.withOpacity(0.06)
+                      : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected
+                    ? colorScheme.primary
+                    : isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.grey.shade300,
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? Colors.white
+                    : colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ),
         ),
-        checkmarkColor: colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     );
   }
