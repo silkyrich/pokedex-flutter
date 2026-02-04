@@ -1,18 +1,58 @@
 import 'package:flutter/material.dart';
 
-class StatBar extends StatelessWidget {
+class StatBar extends StatefulWidget {
   final String label;
   final int value;
   final int maxValue;
+  final bool animate;
 
   const StatBar({
     super.key,
     required this.label,
     required this.value,
     this.maxValue = 255,
+    this.animate = true,
   });
 
-  Color get _barColor {
+  @override
+  State<StatBar> createState() => _StatBarState();
+}
+
+class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 900),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    if (widget.animate) {
+      _controller.forward();
+    } else {
+      _controller.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(StatBar old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value) {
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Color _barColor(int value) {
     if (value < 30) return const Color(0xFFF34444);
     if (value < 60) return const Color(0xFFFF7F0F);
     if (value < 90) return const Color(0xFFFFDD57);
@@ -32,6 +72,9 @@ class StatBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = _barColor(widget.value);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -39,35 +82,64 @@ class StatBar extends StatelessWidget {
           SizedBox(
             width: 80,
             child: Text(
-              _statNames[label] ?? label,
-              style: const TextStyle(
+              _statNames[widget.label] ?? widget.label,
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: Color(0xFF555555),
+                color: isDark ? Colors.grey.shade400 : const Color(0xFF555555),
               ),
             ),
           ),
           SizedBox(
             width: 40,
-            child: Text(
-              '$value',
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, _) => Text(
+                '${(widget.value * _animation.value).round()}',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: color,
+                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: value / maxValue,
-                minHeight: 14,
-                backgroundColor: const Color(0xFFE8E8E8),
-                valueColor: AlwaysStoppedAnimation<Color>(_barColor),
-              ),
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, _) {
+                return Container(
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey.shade800 : const Color(0xFFE8E8E8),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: (widget.value / widget.maxValue) * _animation.value,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        gradient: LinearGradient(
+                          colors: [
+                            color.withOpacity(0.7),
+                            color,
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
