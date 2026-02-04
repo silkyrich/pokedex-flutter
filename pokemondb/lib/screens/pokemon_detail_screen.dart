@@ -55,6 +55,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
       }
 
       if (mounted) {
+        AppState().setActivePokemon(detail);
         setState(() {
           _pokemon = detail;
           _species = species;
@@ -415,23 +416,38 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   }
 
   Widget _buildQuickActions(PokemonDetail p, ThemeData theme, bool isDark, Color typeColor) {
+    final appState = AppState();
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         _QuickActionButton(
-          icon: Icons.bolt_rounded,
+          icon: Icons.shield_rounded,
           label: 'What Beats This?',
           color: Colors.red,
           isDark: isDark,
           onTap: () => context.go('/tools/counter/${p.id}'),
         ),
         _QuickActionButton(
-          icon: Icons.calculate_rounded,
+          icon: Icons.bar_chart_rounded,
           label: 'Stat Calculator',
           color: const Color(0xFF3B82F6),
           isDark: isDark,
           onTap: () => context.go('/tools/stat-calc/${p.id}'),
+        ),
+        _QuickActionButton(
+          icon: Icons.local_fire_department_rounded,
+          label: 'Damage Calc',
+          color: const Color(0xFFEF6C00),
+          isDark: isDark,
+          onTap: () => context.go('/tools/damage-calc'),
+        ),
+        _QuickActionButton(
+          icon: Icons.speed_rounded,
+          label: 'Speed Tiers',
+          color: const Color(0xFF7C3AED),
+          isDark: isDark,
+          onTap: () => context.go('/tools/speed-tiers'),
         ),
         _QuickActionButton(
           icon: Icons.compare_arrows,
@@ -439,6 +455,16 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           color: typeColor,
           isDark: isDark,
           onTap: () => context.go('/battle/${p.id}/25'),
+        ),
+        _QuickActionButton(
+          icon: appState.isOnTeam(p.id) ? Icons.group_remove : Icons.group_add,
+          label: appState.isOnTeam(p.id) ? 'Remove from Team' : 'Add to Team',
+          color: const Color(0xFF059669),
+          isDark: isDark,
+          onTap: () {
+            appState.toggleTeamMember(p.id);
+            setState(() {});
+          },
         ),
       ],
     );

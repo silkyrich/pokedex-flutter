@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/pokemon.dart';
 
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
@@ -20,6 +21,21 @@ class AppState extends ChangeNotifier {
   List<int> get team => List.unmodifiable(_team);
   bool isOnTeam(int id) => _team.contains(id);
   bool get teamFull => _team.length >= 6;
+
+  // Active Pokemon context — flows from detail page to tools
+  PokemonDetail? _activePokemon;
+  PokemonDetail? get activePokemon => _activePokemon;
+
+  final List<PokemonDetail> _recentPokemon = [];
+  List<PokemonDetail> get recentPokemon => List.unmodifiable(_recentPokemon);
+
+  void setActivePokemon(PokemonDetail pokemon) {
+    _activePokemon = pokemon;
+    _recentPokemon.removeWhere((p) => p.id == pokemon.id);
+    _recentPokemon.insert(0, pokemon);
+    if (_recentPokemon.length > 8) _recentPokemon.removeLast();
+    notifyListeners();
+  }
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();

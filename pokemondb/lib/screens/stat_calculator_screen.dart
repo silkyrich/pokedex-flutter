@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../services/pokeapi_service.dart';
+import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
 
@@ -68,7 +69,13 @@ class _StatCalculatorScreenState extends State<StatCalculatorScreen> {
       _evs[s] = 0;
       _ivs[s] = 31;
     }
-    if (widget.pokemonId != null) _loadPokemon(widget.pokemonId!);
+    if (widget.pokemonId != null) {
+      _loadPokemon(widget.pokemonId!);
+    } else {
+      // Use active Pokemon from context if available
+      final active = AppState().activePokemon;
+      if (active != null) _pokemon = active;
+    }
   }
 
   Future<void> _loadPokemon(int id) async {
