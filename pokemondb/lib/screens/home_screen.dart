@@ -71,11 +71,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (sortParam != _sortBy) {
       _sortBy = sortParam;
-      // Sort change just re-sorts existing entries if loaded
       if (!needsReload && _entries.isNotEmpty) {
-        _sortEntries();
-        setState(() {});
-        return;
+        // If all entries are already loaded, just re-sort in place
+        if (_offset >= _total) {
+          _sortEntries();
+          setState(() {});
+          return;
+        }
+        // Switching to name/bst from partial number load needs full reload
+        needsReload = true;
       }
     }
     if (typeParam != _filterType) {
@@ -137,6 +141,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  bool get _needsFullLoad => _sortBy != 'number';
+
   Future<void> _loadInitial() async {
     setState(() {
       _loading = true;
@@ -148,7 +154,18 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final range = _genRanges[_selectedGen]!;
       _total = range[1] - range[0] + 1;
-      await _loadBatch(range);
+
+      if (_needsFullLoad) {
+        // Load everything before sorting so the order is correct
+        while (_offset < _total) {
+          await _loadBatch(range);
+          // Show progress for large loads
+          if (mounted && _entries.length % 100 == 0) setState(() {});
+        }
+      } else {
+        await _loadBatch(range);
+      }
+
       _sortEntries();
       if (mounted) setState(() => _loading = false);
     } catch (e) {
@@ -157,13 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadMore() async {
-    if (_loadingMore || _offset >= _total) return;
+    if (_loadingMore || _offset >= _total || _needsFullLoad) return;
     setState(() => _loadingMore = true);
 
     try {
       final range = _genRanges[_selectedGen]!;
       await _loadBatch(range);
-      _sortEntries();
       if (mounted) setState(() => _loadingMore = false);
     } catch (e) {
       if (mounted) setState(() => _loadingMore = false);
@@ -365,7 +381,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Loading Pokemon...',
+                          _needsFullLoad && _entries.isNotEmpty
+                              ? 'Loading all Pokemon for sorting... ${_entries.length}/$_total'
+                              : 'Loading Pokemon...',
                           style: TextStyle(
                             color: colorScheme.onSurface.withOpacity(0.5),
                             fontSize: 15,
