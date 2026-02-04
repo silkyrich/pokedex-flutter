@@ -22,6 +22,8 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   EvolutionInfo? _evoRoot;
   bool _loading = true;
   String? _error;
+  int? _activeFormId; // null = default form
+  bool _loadingForm = false;
 
   @override
   void initState() {
@@ -61,12 +63,28 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           _species = species;
           _evoRoot = evoRoot;
           _loading = false;
+          _activeFormId = null;
+          _loadingForm = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() { _error = e.toString(); _loading = false; });
       }
+    }
+  }
+
+  Future<void> _switchForm(FormVariety form) async {
+    if (_activeFormId == form.id) return;
+    setState(() { _loadingForm = true; _activeFormId = form.id; });
+    try {
+      final detail = await PokeApiService.getPokemonDetail(form.id);
+      if (mounted) {
+        AppState().setActivePokemon(detail);
+        setState(() { _pokemon = detail; _loadingForm = false; });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingForm = false);
     }
   }
 
@@ -290,6 +308,9 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   }
 
   Widget _buildTitleBlock(PokemonDetail p, ThemeData theme) {
+    final varieties = _species?.varieties ?? [];
+    final hasMultipleForms = varieties.length > 1;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -303,12 +324,29 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          p.displayName,
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                p.displayName,
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            if (_loadingForm)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: SizedBox(
+                  width: 18, height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -320,6 +358,81 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
             fontSize: 14,
             navigable: true,
           )).toList(),
+        ),
+        // Form selector
+        if (hasMultipleForms) ...[
+          const SizedBox(height: 12),
+          _buildFormSelector(varieties, theme),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFormSelector(List<FormVariety> varieties, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final currentId = _pokemon?.id;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'FORMS',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: colorScheme.onSurface.withOpacity(0.35),
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: varieties.map((form) {
+              final isActive = currentId == form.id;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: _loadingForm ? null : () => _switchForm(form),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? colorScheme.primary
+                            : isDark
+                                ? Colors.white.withOpacity(0.06)
+                                : Colors.grey.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isActive
+                              ? colorScheme.primary
+                              : isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Text(
+                        form.formLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                          color: isActive
+                              ? Colors.white
+                              : colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
@@ -334,10 +447,11 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
         border: Border.all(color: typeColor.withOpacity(isDark ? 0.15 : 0.1)),
       ),
       child: Center(
-        child: Hero(
-          tag: 'pokemon-sprite-${p.id}',
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
           child: Image.network(
             p.imageUrl,
+            key: ValueKey(p.id),
             width: 220,
             height: 220,
             fit: BoxFit.contain,

@@ -38,6 +38,8 @@ class PokemonDetail {
   final List<PokemonMove> moves;
   final String? speciesUrl;
   final int baseExperience;
+  final String? _artworkUrl;
+  final String? _spriteUrlFromApi;
 
   PokemonDetail({
     required this.id,
@@ -50,17 +52,55 @@ class PokemonDetail {
     required this.moves,
     this.speciesUrl,
     required this.baseExperience,
-  });
+    String? artworkUrl,
+    String? spriteUrlFromApi,
+  }) : _artworkUrl = artworkUrl, _spriteUrlFromApi = spriteUrlFromApi;
 
   String get imageUrl =>
+      _artworkUrl ??
       'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png';
 
-  String get displayName => name[0].toUpperCase() + name.substring(1);
+  String get spriteUrl =>
+      _spriteUrlFromApi ??
+      'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png';
+
+  String get displayName {
+    // For forms, show a nicer name: "charizard-mega-x" → "Charizard (Mega X)"
+    final parts = name.split('-');
+    if (parts.length == 1) return name[0].toUpperCase() + name.substring(1);
+    final baseName = parts.first[0].toUpperCase() + parts.first.substring(1);
+    // Check if this is a form (ID > 10000 usually indicates alternate form)
+    if (id > 10000) {
+      final suffix = parts.sublist(1).join('-');
+      final formLabel = suffix
+          .replaceAll('mega-x', 'Mega X')
+          .replaceAll('mega-y', 'Mega Y')
+          .replaceAll('mega', 'Mega')
+          .replaceAll('gmax', 'Gigantamax')
+          .replaceAll('alola', 'Alolan')
+          .replaceAll('galar', 'Galarian')
+          .replaceAll('hisui', 'Hisuian')
+          .replaceAll('paldea', 'Paldean');
+      if (formLabel != suffix) return '$baseName ($formLabel)';
+      final niceSuffix = suffix.split('-').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
+      return '$baseName ($niceSuffix)';
+    }
+    return parts.map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join('-');
+  }
 
   String get idString => '#${id.toString().padLeft(4, '0')}';
 
   double get heightInMeters => height / 10.0;
   double get weightInKg => weight / 10.0;
+
+  /// Species ID (base form ID). For forms (id > 10000), extracted from speciesUrl.
+  int get speciesId {
+    if (speciesUrl != null) {
+      final segments = speciesUrl!.split('/').where((s) => s.isNotEmpty).toList();
+      return int.tryParse(segments.last) ?? id;
+    }
+    return id;
+  }
 
   factory PokemonDetail.fromJson(Map<String, dynamic> json) {
     final statsMap = <String, int>{};
@@ -92,6 +132,16 @@ class PokemonDetail {
       );
     }).toList();
 
+    // Extract sprite URLs from API response
+    final sprites = json['sprites'] as Map<String, dynamic>?;
+    String? artworkUrl;
+    String? spriteUrl;
+    if (sprites != null) {
+      spriteUrl = sprites['front_default'] as String?;
+      final other = sprites['other'] as Map<String, dynamic>?;
+      artworkUrl = other?['official-artwork']?['front_default'] as String?;
+    }
+
     return PokemonDetail(
       id: json['id'],
       name: json['name'],
@@ -103,6 +153,8 @@ class PokemonDetail {
       moves: moves,
       speciesUrl: json['species']?['url'],
       baseExperience: json['base_experience'] ?? 0,
+      artworkUrl: artworkUrl,
+      spriteUrlFromApi: spriteUrl,
     );
   }
 }
@@ -141,6 +193,40 @@ class PokemonMove {
       name.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
 }
 
+class FormVariety {
+  final String name;
+  final int id;
+  final bool isDefault;
+
+  FormVariety({required this.name, required this.id, required this.isDefault});
+
+  /// Human-readable form label: "charizard-mega-x" → "Mega X"
+  String get formLabel {
+    // Default form
+    if (isDefault) return 'Base';
+    // Extract the suffix after the base name
+    final baseName = name.split('-').first;
+    final suffix = name.length > baseName.length
+        ? name.substring(baseName.length + 1)
+        : name;
+    // Common form transformations
+    final label = suffix
+        .replaceAll('mega-x', 'Mega X')
+        .replaceAll('mega-y', 'Mega Y')
+        .replaceAll('mega', 'Mega')
+        .replaceAll('gmax', 'Gigantamax')
+        .replaceAll('alola', 'Alolan')
+        .replaceAll('galar', 'Galarian')
+        .replaceAll('hisui', 'Hisuian')
+        .replaceAll('paldea', 'Paldean');
+    // If no known transformation, just capitalize
+    if (label == suffix) {
+      return suffix.split('-').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
+    }
+    return label;
+  }
+}
+
 class PokemonSpecies {
   final int id;
   final String name;
@@ -148,6 +234,7 @@ class PokemonSpecies {
   final String? flavorText;
   final List<EvolutionInfo> evolutionChain;
   final int? evolutionChainId;
+  final List<FormVariety> varieties;
 
   PokemonSpecies({
     required this.id,
@@ -156,6 +243,7 @@ class PokemonSpecies {
     this.flavorText,
     this.evolutionChain = const [],
     this.evolutionChainId,
+    this.varieties = const [],
   });
 
   factory PokemonSpecies.fromJson(Map<String, dynamic> json) {
@@ -182,12 +270,28 @@ class PokemonSpecies {
       chainId = int.tryParse(segments.last);
     }
 
+    // Parse varieties (forms)
+    final varieties = <FormVariety>[];
+    final varietiesJson = json['varieties'] as List? ?? [];
+    for (final v in varietiesJson) {
+      final pokemonData = v['pokemon'];
+      final pokemonUrl = pokemonData['url'] as String;
+      final segments = pokemonUrl.split('/').where((s) => s.isNotEmpty).toList();
+      final pokemonId = int.parse(segments.last);
+      varieties.add(FormVariety(
+        name: pokemonData['name'] as String,
+        id: pokemonId,
+        isDefault: v['is_default'] as bool? ?? false,
+      ));
+    }
+
     return PokemonSpecies(
       id: json['id'],
       name: json['name'],
       genus: genus,
       flavorText: flavorText,
       evolutionChainId: chainId,
+      varieties: varieties,
     );
   }
 }
