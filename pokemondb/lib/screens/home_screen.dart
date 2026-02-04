@@ -207,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
         continue;
       }
 
-      final bst = d?.stats.fold<int>(0, (sum, s) => sum + s.baseStat) ?? 0;
+      final bst = d?.stats.values.fold<int>(0, (sum, v) => sum + v) ?? 0;
       _entries.add(_PokemonEntry(
         basic: PokemonBasic(id: id, name: d?.name ?? 'pokemon-$id', url: ''),
         types: types,
