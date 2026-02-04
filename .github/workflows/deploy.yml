@@ -30,7 +30,7 @@ jobs:
 
       - name: Build for web
         working-directory: pokemondb
-        run: flutter build web --release --base-href /Scratch/
+        run: flutter build web --release --base-href /pokedex-flutter/
 
       - name: Copy .nojekyll
         run: cp .nojekyll pokemondb/build/web/.nojekyll
