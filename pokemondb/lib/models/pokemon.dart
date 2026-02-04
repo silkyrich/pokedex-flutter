@@ -198,6 +198,7 @@ class EvolutionInfo {
   final String? trigger;
   final int? minLevel;
   final String? item;
+  final List<EvolutionInfo> evolvesTo;
 
   EvolutionInfo({
     required this.name,
@@ -205,6 +206,7 @@ class EvolutionInfo {
     this.trigger,
     this.minLevel,
     this.item,
+    this.evolvesTo = const [],
   });
 
   String get displayTrigger {
@@ -214,5 +216,22 @@ class EvolutionInfo {
     }
     if (trigger == 'trade') return 'Trade';
     return '';
+  }
+
+  String get displayName => name[0].toUpperCase() + name.substring(1);
+
+  /// Flatten tree into a list (for simple iteration).
+  List<EvolutionInfo> flatten() {
+    final result = <EvolutionInfo>[this];
+    for (final child in evolvesTo) {
+      result.addAll(child.flatten());
+    }
+    return result;
+  }
+
+  /// Whether this chain has any branching.
+  bool get hasBranches {
+    if (evolvesTo.length > 1) return true;
+    return evolvesTo.any((e) => e.hasBranches);
   }
 }

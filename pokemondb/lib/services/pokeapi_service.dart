@@ -98,15 +98,13 @@ class PokeApiService {
     return PokemonSpecies.fromJson(data);
   }
 
-  static Future<List<EvolutionInfo>> getEvolutionChain(int chainId) async {
+  /// Returns the root of the evolution tree.
+  static Future<EvolutionInfo> getEvolutionChain(int chainId) async {
     final data = await _getJson('$_baseUrl/evolution-chain/$chainId');
-    final List<EvolutionInfo> evolutions = [];
-    _parseEvolutionChain(data['chain'], evolutions);
-    return evolutions;
+    return _parseEvolutionChain(data['chain']);
   }
 
-  static void _parseEvolutionChain(
-      Map<String, dynamic> chain, List<EvolutionInfo> evolutions) {
+  static EvolutionInfo _parseEvolutionChain(Map<String, dynamic> chain) {
     final speciesUrl = chain['species']['url'] as String;
     final segments = speciesUrl.split('/').where((s) => s.isNotEmpty).toList();
     final id = int.parse(segments.last);
@@ -122,17 +120,19 @@ class PokeApiService {
       item = details[0]['item']?['name'];
     }
 
-    evolutions.add(EvolutionInfo(
+    final children = <EvolutionInfo>[];
+    for (final next in chain['evolves_to'] as List) {
+      children.add(_parseEvolutionChain(next));
+    }
+
+    return EvolutionInfo(
       name: name,
       id: id,
       trigger: trigger,
       minLevel: minLevel,
       item: item,
-    ));
-
-    for (final next in chain['evolves_to'] as List) {
-      _parseEvolutionChain(next, evolutions);
-    }
+      evolvesTo: children,
+    );
   }
 
   static Future<MoveDetail> getMoveDetail(String nameOrId) async {

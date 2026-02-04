@@ -21,13 +21,13 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
   // Pokemon 1
   PokemonDetail? _pokemon1;
   PokemonSpecies? _species1;
-  List<EvolutionInfo>? _evoChain1;
+  EvolutionInfo? _evoRoot1;
   Map<String, MoveDetail>? _moveDetails1;
 
   // Pokemon 2
   PokemonDetail? _pokemon2;
   PokemonSpecies? _species2;
-  List<EvolutionInfo>? _evoChain2;
+  EvolutionInfo? _evoRoot2;
   Map<String, MoveDetail>? _moveDetails2;
 
   bool _loading1 = false;
@@ -66,9 +66,9 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
     try {
       final detail = await PokeApiService.getPokemonDetail(id);
       final species = await PokeApiService.getPokemonSpecies(id);
-      List<EvolutionInfo>? evoChain;
+      EvolutionInfo? evoRoot;
       if (species.evolutionChainId != null) {
-        evoChain = await PokeApiService.getEvolutionChain(species.evolutionChainId!);
+        evoRoot = await PokeApiService.getEvolutionChain(species.evolutionChainId!);
       }
 
       // Load move details for STAB and effectiveness analysis
@@ -86,13 +86,13 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
           if (slot == 1) {
             _pokemon1 = detail;
             _species1 = species;
-            _evoChain1 = evoChain;
+            _evoRoot1 = evoRoot;
             _moveDetails1 = moveMap;
             _loading1 = false;
           } else {
             _pokemon2 = detail;
             _species2 = species;
-            _evoChain2 = evoChain;
+            _evoRoot2 = evoRoot;
             _moveDetails2 = moveMap;
             _loading2 = false;
           }
@@ -914,9 +914,11 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
 
   // --- Evolution Stepper ---
   Widget _buildEvolutionStepper(int slot, ThemeData theme, bool isDark) {
-    final evoChain = slot == 1 ? _evoChain1 : _evoChain2;
+    final evoRoot = slot == 1 ? _evoRoot1 : _evoRoot2;
     final pokemon = slot == 1 ? _pokemon1 : _pokemon2;
-    if (evoChain == null || evoChain.length <= 1 || pokemon == null) return const SizedBox.shrink();
+    if (evoRoot == null || pokemon == null) return const SizedBox.shrink();
+    final allEvos = evoRoot.flatten();
+    if (allEvos.length <= 1) return const SizedBox.shrink();
 
     final color = TypeColors.getColor(pokemon.types.first.name);
 
@@ -944,71 +946,121 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
               style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4)),
             ),
             const SizedBox(height: 14),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(evoChain.length, (i) {
-                  final evo = evoChain[i];
-                  final isCurrent = evo.id == pokemon.id;
-                  final spriteUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png';
+            _buildEvoNode(slot, evoRoot, pokemon.id, color, theme, isDark),
+          ],
+        ),
+      ),
+    );
+  }
 
-                  return Row(
-                    children: [
-                      if (i > 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Column(
-                            children: [
-                              Icon(Icons.arrow_forward_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.3)),
-                              if (evo.displayTrigger.isNotEmpty)
-                                Text(
-                                  evo.displayTrigger,
-                                  style: TextStyle(fontSize: 9, color: theme.colorScheme.onSurface.withOpacity(0.4)),
-                                ),
-                            ],
-                          ),
-                        ),
-                      GestureDetector(
-                        onTap: isCurrent ? null : () => _switchToEvolution(slot, evo),
-                        child: MouseRegion(
-                          cursor: isCurrent ? SystemMouseCursors.basic : SystemMouseCursors.click,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isCurrent
-                                  ? color.withOpacity(isDark ? 0.2 : 0.1)
-                                  : isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isCurrent ? color : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Image.network(spriteUrl, width: 48, height: 48,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 32)),
-                                const SizedBox(height: 4),
-                                Text(
-                                  evo.name[0].toUpperCase() + evo.name.substring(1),
-                                  style: TextStyle(
-                                    fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
-                                    fontSize: 11,
-                                    color: isCurrent ? color : theme.colorScheme.onSurface.withOpacity(0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
+  Widget _buildEvoNode(int slot, EvolutionInfo node, int currentId, Color color, ThemeData theme, bool isDark) {
+    final tile = _buildEvoTile(slot, node, currentId, color, theme, isDark);
+
+    if (node.evolvesTo.isEmpty) return tile;
+
+    // Linear chain
+    if (node.evolvesTo.length == 1) {
+      final child = node.evolvesTo.first;
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            tile,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.arrow_forward_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                  if (child.displayTrigger.isNotEmpty)
+                    Text(child.displayTrigger, style: TextStyle(fontSize: 9, color: theme.colorScheme.onSurface.withOpacity(0.4))),
+                ],
               ),
             ),
+            _buildEvoNode(slot, child, currentId, color, theme, isDark),
           ],
+        ),
+      );
+    }
+
+    // Branching chain (e.g. Eevee)
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        tile,
+        const SizedBox(height: 6),
+        Icon(Icons.call_split_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: node.evolvesTo.map((child) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (child.displayTrigger.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Text(child.displayTrigger, style: TextStyle(fontSize: 8, color: theme.colorScheme.onSurface.withOpacity(0.4))),
+                      ),
+                    _buildEvoTile(slot, child, currentId, color, theme, isDark),
+                    if (child.evolvesTo.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: _buildEvoNode(slot, child, currentId, color, theme, isDark),
+                      ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEvoTile(int slot, EvolutionInfo evo, int currentId, Color color, ThemeData theme, bool isDark) {
+    final isCurrent = evo.id == currentId;
+    final spriteUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png';
+
+    return GestureDetector(
+      onTap: isCurrent ? null : () => _switchToEvolution(slot, evo),
+      child: MouseRegion(
+        cursor: isCurrent ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isCurrent
+                ? color.withOpacity(isDark ? 0.2 : 0.1)
+                : isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCurrent ? color : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.network(spriteUrl, width: 40, height: 40,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28)),
+              const SizedBox(height: 2),
+              Text(
+                evo.displayName,
+                style: TextStyle(
+                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
+                  fontSize: 10,
+                  color: isCurrent ? color : theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
