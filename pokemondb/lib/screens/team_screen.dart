@@ -219,6 +219,8 @@ class _TeamScreenState extends State<TeamScreen> {
   Widget _buildTeamSummary(List<int> teamIds, ThemeData theme, bool isDark) {
     final Set<String> allTypes = {};
     final Map<String, int> weaknesses = {};
+    final Map<String, int> resistances = {};
+    final Map<String, int> offensiveCoverage = {};
 
     for (final id in teamIds) {
       final d = _details[id];
@@ -227,95 +229,222 @@ class _TeamScreenState extends State<TeamScreen> {
       final typeNames = d.types.map((t) => t.name).toList();
       allTypes.addAll(typeNames);
 
+      // Defensive analysis
       for (final attackType in TypeChart.types) {
         double mult = 1;
         for (final defType in typeNames) {
           mult *= TypeChart.getEffectiveness(attackType, defType);
         }
         if (mult > 1) weaknesses[attackType] = (weaknesses[attackType] ?? 0) + 1;
+        if (mult < 1) resistances[attackType] = (resistances[attackType] ?? 0) + 1;
+      }
+
+      // Offensive coverage (STAB types hitting super effectively)
+      for (final atkType in typeNames) {
+        for (final defType in TypeChart.types) {
+          if (TypeChart.getEffectiveness(atkType, defType) >= 2) {
+            offensiveCoverage[defType] = (offensiveCoverage[defType] ?? 0) + 1;
+          }
+        }
       }
     }
 
     final coverageTypes = allTypes.toList()..sort();
     final uncoveredTypes = TypeChart.types.where((t) => !coverageTypes.contains(t)).toList();
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Team Analysis',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text('Types covered', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: coverageTypes.map((t) => TypeBadge(type: t, navigable: true)).toList(),
-            ),
-            if (uncoveredTypes.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Text('Types not covered', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: uncoveredTypes.map((t) => Opacity(opacity: 0.4, child: TypeBadge(type: t, navigable: true))).toList(),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Text('Team weaknesses', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: (weaknesses.entries.toList()..sort((a, b) => b.value.compareTo(a.value)))
-                .take(8)
-                .map((e) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: TypeColors.getColor(e.key).withOpacity(isDark ? 0.15 : 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: TypeColors.getColor(e.key).withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+    // Offensive gaps — types we can't hit super effectively
+    final offensiveGaps = TypeChart.types.where((t) => !offensiveCoverage.containsKey(t)).toList();
+
+    // Shared weaknesses — types that hit 3+ team members super effectively
+    final criticalWeaknesses = weaknesses.entries.where((e) => e.value >= 3).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Unresisted types — attack types nobody on team resists
+    final unresisted = TypeChart.types.where((t) => !resistances.containsKey(t)).toList();
+
+    // Generate warnings
+    final warnings = <_TeamWarning>[];
+    for (final cw in criticalWeaknesses) {
+      warnings.add(_TeamWarning(
+        icon: Icons.warning_rounded,
+        color: Colors.red,
+        text: 'Your team has no answer to ${cw.key[0].toUpperCase()}${cw.key.substring(1)} types — ${cw.value} members are weak to it.',
+      ));
+    }
+    if (offensiveGaps.isNotEmpty && offensiveGaps.length <= 4) {
+      final gapNames = offensiveGaps.map((t) => '${t[0].toUpperCase()}${t.substring(1)}').join(', ');
+      warnings.add(_TeamWarning(
+        icon: Icons.flash_off_rounded,
+        color: Colors.orange,
+        text: 'No super effective STAB coverage against: $gapNames.',
+      ));
+    }
+    if (unresisted.isNotEmpty && unresisted.length <= 4) {
+      final names = unresisted.map((t) => '${t[0].toUpperCase()}${t.substring(1)}').join(', ');
+      warnings.add(_TeamWarning(
+        icon: Icons.shield_outlined,
+        color: Colors.amber,
+        text: 'No team member resists: $names.',
+      ));
+    }
+
+    // Stat overview
+    int totalBst = 0;
+    int minSpeed = 999;
+    int maxSpeed = 0;
+    for (final id in teamIds) {
+      final d = _details[id];
+      if (d == null) continue;
+      totalBst += d.stats.values.fold(0, (a, b) => a + b);
+      final spd = d.stats['speed'] ?? 0;
+      if (spd < minSpeed) minSpeed = spd;
+      if (spd > maxSpeed) maxSpeed = spd;
+    }
+    final avgBst = teamIds.isNotEmpty ? totalBst ~/ teamIds.length : 0;
+
+    return Column(
+      children: [
+        // Warnings
+        if (warnings.isNotEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        '${e.key[0].toUpperCase()}${e.key.substring(1)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? TypeColors.getColor(e.key) : TypeColors.getColor(e.key),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${e.value}',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.red),
-                        ),
-                      ),
+                      Icon(Icons.warning_rounded, color: Colors.red, size: 22),
+                      const SizedBox(width: 8),
+                      Text('Team Warnings', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
                     ],
                   ),
-                ))
-                .toList(),
+                  const SizedBox(height: 16),
+                  ...warnings.map((w) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(w.icon, size: 18, color: w.color),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(w.text, style: TextStyle(fontSize: 13, height: 1.5, color: theme.colorScheme.onSurface.withOpacity(0.8))),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              ),
             ),
-          ],
+          ),
+        if (warnings.isNotEmpty) const SizedBox(height: 12),
+
+        // Main analysis
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Team Analysis', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+                const SizedBox(height: 16),
+                // Stat summary
+                Row(
+                  children: [
+                    _StatSummaryTile(label: 'Avg BST', value: '$avgBst', icon: Icons.bar_chart, color: theme.colorScheme.primary, isDark: isDark),
+                    const SizedBox(width: 8),
+                    _StatSummaryTile(label: 'Speed Range', value: '$minSpeed-$maxSpeed', icon: Icons.speed, color: const Color(0xFF8B5CF6), isDark: isDark),
+                    const SizedBox(width: 8),
+                    _StatSummaryTile(label: 'Types', value: '${coverageTypes.length}/18', icon: Icons.grid_view, color: const Color(0xFF22C55E), isDark: isDark),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text('Offensive STAB coverage', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: TypeChart.types.map((t) {
+                    final covered = offensiveCoverage.containsKey(t);
+                    return Opacity(
+                      opacity: covered ? 1.0 : 0.3,
+                      child: TypeBadge(type: t, fontSize: 10, navigable: true),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                Text('Types on team', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: coverageTypes.map((t) => TypeBadge(type: t, navigable: true)).toList(),
+                ),
+                if (uncoveredTypes.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('Types not on team', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6, runSpacing: 6,
+                    children: uncoveredTypes.map((t) => Opacity(opacity: 0.4, child: TypeBadge(type: t, navigable: true))).toList(),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Text('Defensive weaknesses', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: (weaknesses.entries.toList()..sort((a, b) => b.value.compareTo(a.value)))
+                    .take(10)
+                    .map((e) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: TypeColors.getColor(e.key).withOpacity(isDark ? 0.15 : 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: TypeColors.getColor(e.key).withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${e.key[0].toUpperCase()}${e.key.substring(1)}',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: TypeColors.getColor(e.key)),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(color: Colors.red.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                            child: Text('${e.value}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    ))
+                    .toList(),
+                ),
+                const SizedBox(height: 16),
+                // Quick links
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/tools/speed-tiers'),
+                        icon: const Icon(Icons.speed_rounded, size: 16),
+                        label: const Text('Speed Tiers'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/tools/counter'),
+                        icon: const Icon(Icons.bolt_rounded, size: 16),
+                        label: const Text('Counter Lookup'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -467,6 +596,44 @@ class _TeamMemberCardState extends State<_TeamMemberCard> {
           tooltip: 'Remove from team',
         ),
       ],
+    );
+  }
+}
+
+class _TeamWarning {
+  final IconData icon;
+  final Color color;
+  final String text;
+  _TeamWarning({required this.icon, required this.color, required this.text});
+}
+
+class _StatSummaryTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final bool isDark;
+  const _StatSummaryTile({required this.label, required this.value, required this.icon, required this.color, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(isDark ? 0.1 : 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.15)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: color)),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 10, color: color.withOpacity(0.7))),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -10,6 +10,13 @@ import 'screens/team_screen.dart';
 import 'screens/move_detail_screen.dart';
 import 'screens/type_matchup_screen.dart';
 import 'screens/battle_screen.dart';
+import 'screens/tools_screen.dart';
+import 'screens/stat_calculator_screen.dart';
+import 'screens/damage_calculator_screen.dart';
+import 'screens/speed_tiers_screen.dart';
+import 'screens/counter_screen.dart';
+import 'screens/nuzlocke_screen.dart';
+import 'screens/shiny_hunter_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -55,6 +62,27 @@ final _router = GoRouter(
           },
         ),
         GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
+        GoRoute(path: '/tools', builder: (context, state) => const ToolsScreen()),
+        GoRoute(path: '/tools/stat-calc', builder: (context, state) => const StatCalculatorScreen()),
+        GoRoute(
+          path: '/tools/stat-calc/:id',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '');
+            return StatCalculatorScreen(pokemonId: id);
+          },
+        ),
+        GoRoute(path: '/tools/damage-calc', builder: (context, state) => const DamageCalculatorScreen()),
+        GoRoute(path: '/tools/speed-tiers', builder: (context, state) => const SpeedTiersScreen()),
+        GoRoute(path: '/tools/counter', builder: (context, state) => const CounterScreen()),
+        GoRoute(
+          path: '/tools/counter/:id',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '');
+            return CounterScreen(pokemonId: id);
+          },
+        ),
+        GoRoute(path: '/tools/nuzlocke', builder: (context, state) => const NuzlockeScreen()),
+        GoRoute(path: '/tools/shiny', builder: (context, state) => const ShinyHunterScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
         GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
         GoRoute(

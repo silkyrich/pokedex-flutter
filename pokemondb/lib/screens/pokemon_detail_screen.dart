@@ -129,23 +129,27 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
     final appState = AppState();
     final primaryType = p.types.first.name;
     final typeColor = TypeColors.getColor(primaryType);
+    final secondaryColor = p.types.length > 1
+        ? TypeColors.getColor(p.types[1].name)
+        : typeColor;
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero header with gradient
+          // Hero header with type-colored gradient
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: [
-                  typeColor.withOpacity(isDark ? 0.2 : 0.12),
-                  typeColor.withOpacity(isDark ? 0.05 : 0.02),
+                  typeColor.withOpacity(isDark ? 0.25 : 0.15),
+                  secondaryColor.withOpacity(isDark ? 0.12 : 0.06),
                   Colors.transparent,
                 ],
+                stops: const [0.0, 0.6, 1.0],
               ),
             ),
             child: Center(
@@ -268,6 +272,9 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                       const SizedBox(height: 20),
                     ],
                     _buildTypeDefensesSection(p, theme, isDark),
+                    const SizedBox(height: 20),
+                    // Quick action buttons
+                    _buildQuickActions(p, theme, isDark, typeColor),
                     const SizedBox(height: 20),
                     _buildMovesSection(p, theme),
                     const SizedBox(height: 40),
@@ -404,6 +411,36 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildQuickActions(PokemonDetail p, ThemeData theme, bool isDark, Color typeColor) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _QuickActionButton(
+          icon: Icons.bolt_rounded,
+          label: 'What Beats This?',
+          color: Colors.red,
+          isDark: isDark,
+          onTap: () => context.go('/tools/counter/${p.id}'),
+        ),
+        _QuickActionButton(
+          icon: Icons.calculate_rounded,
+          label: 'Stat Calculator',
+          color: const Color(0xFF3B82F6),
+          isDark: isDark,
+          onTap: () => context.go('/tools/stat-calc/${p.id}'),
+        ),
+        _QuickActionButton(
+          icon: Icons.compare_arrows,
+          label: 'Battle',
+          color: typeColor,
+          isDark: isDark,
+          onTap: () => context.go('/battle/${p.id}/25'),
+        ),
+      ],
     );
   }
 
@@ -842,6 +879,53 @@ class _EvolutionTileState extends State<_EvolutionTile> {
               ),
             ),
           ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+  const _QuickActionButton({required this.icon, required this.label, required this.color, required this.isDark, required this.onTap});
+
+  @override
+  State<_QuickActionButton> createState() => _QuickActionButtonState();
+}
+
+class _QuickActionButtonState extends State<_QuickActionButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? widget.color.withOpacity(widget.isDark ? 0.2 : 0.1)
+                : widget.color.withOpacity(widget.isDark ? 0.08 : 0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: widget.color.withOpacity(_hovered ? 0.4 : 0.15)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 16, color: widget.color),
+              const SizedBox(width: 8),
+              Text(widget.label, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: widget.color)),
+            ],
+          ),
         ),
       ),
     );
