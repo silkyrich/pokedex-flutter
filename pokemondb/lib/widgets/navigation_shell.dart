@@ -835,45 +835,37 @@ class _ThemePickerSheet extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Dark mode toggle
-                Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => appState.toggleTheme(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: colorScheme.onSurface.withOpacity(0.1),
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                            size: 22,
-                            color: colorScheme.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              isDark ? 'Dark Mode' : 'Light Mode',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          Switch(
-                            value: isDark,
-                            onChanged: (_) => appState.toggleTheme(),
-                          ),
-                        ],
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.1),
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        size: 22,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isDark ? 'Dark Mode' : 'Light Mode',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: isDark,
+                        onChanged: (_) => appState.toggleTheme(),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
