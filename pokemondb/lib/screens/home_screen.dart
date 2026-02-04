@@ -13,15 +13,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<PokemonBasic> _pokemon = [];
-  final Map<int, List<String>> _types = {};
+  // Each entry holds basic info + pre-fetched types
+  final List<_PokemonEntry> _entries = [];
   bool _loading = true;
   bool _loadingMore = false;
+  String? _error;
   int _offset = 0;
   int _total = 0;
   static const int _pageSize = 50;
   final ScrollController _scrollController = ScrollController();
-  int _selectedGen = 0; // 0 = all
+  int _selectedGen = 0;
 
   static const Map<int, List<int>> _genRanges = {
     0: [1, 1025],
@@ -51,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+        _scrollController.position.maxScrollExtent - 300) {
       _loadMore();
     }
   }
@@ -59,32 +60,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadInitial() async {
     setState(() {
       _loading = true;
-      _pokemon.clear();
-      _types.clear();
+      _error = null;
+      _entries.clear();
       _offset = 0;
     });
 
     try {
       final range = _genRanges[_selectedGen]!;
       _total = range[1] - range[0] + 1;
-      final limit = _pageSize.clamp(0, _total);
-      final list = await PokeApiService.getPokemonList(
-        offset: range[0] - 1,
-        limit: limit,
-      );
-      _offset = limit;
-
-      // Fetch types for visible pokemon
-      await _fetchTypes(list);
-
-      if (mounted) {
-        setState(() {
-          _pokemon.addAll(list);
-          _loading = false;
-        });
-      }
-    } catch (e) {
+      await _loadBatch(range);
       if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = e.toString(); });
     }
   }
 
@@ -94,36 +81,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final range = _genRanges[_selectedGen]!;
-      final remaining = _total - _offset;
-      final limit = _pageSize.clamp(0, remaining);
-      final list = await PokeApiService.getPokemonList(
-        offset: range[0] - 1 + _offset,
-        limit: limit,
-      );
-      _offset += limit;
-
-      await _fetchTypes(list);
-
-      if (mounted) {
-        setState(() {
-          _pokemon.addAll(list);
-          _loadingMore = false;
-        });
-      }
+      await _loadBatch(range);
+      if (mounted) setState(() => _loadingMore = false);
     } catch (e) {
       if (mounted) setState(() => _loadingMore = false);
     }
   }
 
-  Future<void> _fetchTypes(List<PokemonBasic> list) async {
-    // Fetch types in batches to avoid hammering the API
-    for (final p in list) {
-      if (_types.containsKey(p.id)) continue;
-      try {
-        final detail = await PokeApiService.getPokemonDetail(p.id);
-        _types[p.id] = detail.types.map((t) => t.name).toList();
-      } catch (_) {}
+  /// Load one batch: fetch details in parallel batches of 10 to get types.
+  Future<void> _loadBatch(List<int> range) async {
+    final startId = range[0] + _offset;
+    final remaining = _total - _offset;
+    final count = _pageSize.clamp(0, remaining);
+    if (count <= 0) return;
+
+    final ids = List.generate(count, (i) => startId + i);
+
+    final details = await PokeApiService.getPokemonDetailsBatch(ids);
+
+    for (int i = 0; i < ids.length; i++) {
+      final d = details[i];
+      final id = ids[i];
+      _entries.add(_PokemonEntry(
+        basic: PokemonBasic(id: id, name: d?.name ?? 'pokemon-$id', url: ''),
+        types: d?.types.map((t) => t.name).toList(),
+      ));
     }
+
+    _offset += count;
+  }
+
+  void _selectGen(int gen) {
+    if (gen == _selectedGen) return;
+    _selectedGen = gen;
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+    _loadInitial();
   }
 
   @override
@@ -139,28 +133,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: const AppHeader(),
-      backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          // Generation filter bar
+          // Header bar
           Container(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Pokédex',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Browse Pokémon by National Pokédex number. Click a Pokémon to see detailed stats.',
-                  style: TextStyle(color: Color(0xFF666666), fontSize: 14),
+                Text(
+                  'Browse Pokémon by National Pokédex number.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SingleChildScrollView(
@@ -180,60 +171,69 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // Pokemon grid
+          // Grid
           Expanded(
             child: _loading
                 ? const Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(color: Color(0xFF3B5BA7)),
+                        CircularProgressIndicator(),
                         SizedBox(height: 16),
-                        Text('Loading Pokémon...', style: TextStyle(color: Color(0xFF666666))),
+                        Text('Loading Pokémon...'),
                       ],
                     ),
                   )
-                : GridView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: _pokemon.length + (_loadingMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _pokemon.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(color: Color(0xFF3B5BA7)),
-                          ),
-                        );
-                      }
-                      final p = _pokemon[index];
-                      return PokemonCard(
-                        pokemon: p,
-                        types: _types[p.id],
-                        onTap: () => context.go('/pokemon/${p.id}'),
-                      );
-                    },
-                  ),
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            const SizedBox(height: 8),
+                            Text('Error: $_error'),
+                            const SizedBox(height: 16),
+                            FilledButton(onPressed: _loadInitial, child: const Text('Retry')),
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: 0.82,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemCount: _entries.length + (_loadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index >= _entries.length) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final entry = _entries[index];
+                          return PokemonCard(
+                            pokemon: entry.basic,
+                            types: entry.types,
+                            onTap: () => context.go('/pokemon/${entry.basic.id}'),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
     );
   }
-
-  void _selectGen(int gen) {
-    if (gen == _selectedGen) return;
-    _selectedGen = gen;
-    _loadInitial();
-  }
 }
 
-class _GenChip extends StatefulWidget {
+class _PokemonEntry {
+  final PokemonBasic basic;
+  final List<String>? types;
+
+  _PokemonEntry({required this.basic, this.types});
+}
+
+class _GenChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -241,40 +241,22 @@ class _GenChip extends StatefulWidget {
   const _GenChip({required this.label, required this.selected, required this.onTap});
 
   @override
-  State<_GenChip> createState() => _GenChipState();
-}
-
-class _GenChipState extends State<_GenChip> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          margin: const EdgeInsets.only(right: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: widget.selected
-                ? const Color(0xFF3B5BA7)
-                : _hovered
-                    ? const Color(0xFFE8EDF5)
-                    : const Color(0xFFF0F0F0),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              color: widget.selected ? Colors.white : const Color(0xFF555555),
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
+        selectedColor: colorScheme.primary,
+        labelStyle: TextStyle(
+          color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
         ),
+        checkmarkColor: colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     );
   }

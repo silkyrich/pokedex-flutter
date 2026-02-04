@@ -197,11 +197,22 @@ class EvolutionInfo {
   final int id;
   final String? trigger;
   final int? minLevel;
+  final String? item;
 
   EvolutionInfo({
     required this.name,
     required this.id,
     this.trigger,
     this.minLevel,
+    this.item,
   });
+
+  String get displayTrigger {
+    if (minLevel != null) return 'Lv. $minLevel';
+    if (item != null) {
+      return item!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
+    }
+    if (trigger == 'trade') return 'Trade';
+    return '';
+  }
 }
