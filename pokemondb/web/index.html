@@ -4,10 +4,86 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Pokemon Database - Flutter Web">
+  <meta name="description" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pokémon Database</title>
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <meta name="theme-color" content="#3B5BA7">
+
+  <!-- Open Graph defaults (overridden by script below for Pokemon/move URLs) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" id="og-title" content="PokédexDB — Pokémon Database">
+  <meta property="og:description" id="og-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
+  <meta property="og:image" id="og-image" content="https://silkyrich.github.io/pokedex-flutter/og-image.png">
+  <meta property="og:url" id="og-url" content="https://silkyrich.github.io/pokedex-flutter/">
+  <meta property="og:site_name" content="PokédexDB">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card defaults -->
+  <meta name="twitter:card" id="tw-card" content="summary">
+  <meta name="twitter:title" id="tw-title" content="PokédexDB — Pokémon Database">
+  <meta name="twitter:description" id="tw-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
+  <meta name="twitter:image" id="tw-image" content="https://silkyrich.github.io/pokedex-flutter/og-image.png">
+
+  <title>PokédexDB — Pokémon Database</title>
+
+  <!-- Set context-sensitive meta tags based on URL path -->
+  <script>
+    (function() {
+      var path = window.location.pathname.replace('/pokedex-flutter', '');
+      var base = 'https://silkyrich.github.io/pokedex-flutter';
+
+      // Pokemon detail page: /pokemon/{id}
+      var pokemonMatch = path.match(/^\/pokemon\/(\d+)$/);
+      if (pokemonMatch) {
+        var id = pokemonMatch[1];
+        var artUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
+        var title = 'Pokémon #' + id + ' — PokédexDB';
+        var desc = 'View stats, moves, abilities, evolution chain, and type matchups for Pokémon #' + id + '.';
+
+        document.getElementById('og-title').content = title;
+        document.getElementById('og-desc').content = desc;
+        document.getElementById('og-image').content = artUrl;
+        document.getElementById('og-url').content = base + '/pokemon/' + id;
+        document.getElementById('tw-card').content = 'summary_large_image';
+        document.getElementById('tw-title').content = title;
+        document.getElementById('tw-desc').content = desc;
+        document.getElementById('tw-image').content = artUrl;
+        document.title = title;
+        return;
+      }
+
+      // Move detail page: /moves/{name}
+      var moveMatch = path.match(/^\/moves\/(.+)$/);
+      if (moveMatch) {
+        var name = moveMatch[1].replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        var mTitle = name + ' — Move — PokédexDB';
+        var mDesc = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
+
+        document.getElementById('og-title').content = mTitle;
+        document.getElementById('og-desc').content = mDesc;
+        document.getElementById('og-url').content = base + '/moves/' + moveMatch[1];
+        document.getElementById('tw-title').content = mTitle;
+        document.getElementById('tw-desc').content = mDesc;
+        document.title = mTitle;
+        return;
+      }
+
+      // Type matchup page: /types/{atk}/vs/{def}
+      var typeMatch = path.match(/^\/types\/(.+)\/vs\/(.+)$/);
+      if (typeMatch) {
+        var atk = typeMatch[1].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        var def = typeMatch[2].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        var tTitle = atk + ' vs ' + def + ' — Type Matchup — PokédexDB';
+        document.getElementById('og-title').content = tTitle;
+        document.getElementById('og-url').content = base + path;
+        document.getElementById('tw-title').content = tTitle;
+        document.title = tTitle;
+      }
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <style>
     body { margin: 0; background: #f0f0f0; }
