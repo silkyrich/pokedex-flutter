@@ -13,7 +13,7 @@ class NavigationShell extends StatelessWidget {
     _NavItem('/types', 'Types', Icons.grid_view_outlined, Icons.grid_view_rounded),
     _NavItem('/battle', 'Battle', Icons.compare_arrows_outlined, Icons.compare_arrows),
     _NavItem('/team', 'Team', Icons.groups_outlined, Icons.groups),
-    _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
+    _NavItem('/tools', 'Tools', Icons.build_outlined, Icons.build),
   ];
 
   int _currentIndex(BuildContext context) {
