@@ -2,6 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pokemon.dart';
 
+class AppColorTheme {
+  final String id;
+  final String label;
+  final Color seed;
+  final Color accent;
+
+  const AppColorTheme({
+    required this.id,
+    required this.label,
+    required this.seed,
+    required this.accent,
+  });
+}
+
+const appColorThemes = [
+  AppColorTheme(id: 'blue', label: 'Ocean', seed: Color(0xFF3B5BA7), accent: Color(0xFFDC3545)),
+  AppColorTheme(id: 'red', label: 'Volcano', seed: Color(0xFFDC3545), accent: Color(0xFFFF8A50)),
+  AppColorTheme(id: 'green', label: 'Forest', seed: Color(0xFF2E7D32), accent: Color(0xFF81C784)),
+  AppColorTheme(id: 'purple', label: 'Ghost', seed: Color(0xFF7B1FA2), accent: Color(0xFFCE93D8)),
+  AppColorTheme(id: 'orange', label: 'Fire', seed: Color(0xFFE65100), accent: Color(0xFFFFAB40)),
+  AppColorTheme(id: 'teal', label: 'Water', seed: Color(0xFF00695C), accent: Color(0xFF4DB6AC)),
+  AppColorTheme(id: 'pink', label: 'Fairy', seed: Color(0xFFEC407A), accent: Color(0xFFF48FB1)),
+  AppColorTheme(id: 'slate', label: 'Steel', seed: Color(0xFF455A64), accent: Color(0xFF90A4AE)),
+];
+
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
@@ -10,6 +35,12 @@ class AppState extends ChangeNotifier {
   // Theme
   ThemeMode _themeMode = ThemeMode.light;
   ThemeMode get themeMode => _themeMode;
+
+  String _colorThemeId = 'blue';
+  String get colorThemeId => _colorThemeId;
+  AppColorTheme get colorTheme =>
+      appColorThemes.firstWhere((t) => t.id == _colorThemeId,
+          orElse: () => appColorThemes.first);
 
   // Favorites
   final Set<int> _favorites = {};
@@ -43,6 +74,7 @@ class AppState extends ChangeNotifier {
     // Load theme
     final isDark = prefs.getBool('dark_mode') ?? false;
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    _colorThemeId = prefs.getString('color_theme') ?? 'blue';
 
     // Load favorites
     final favList = prefs.getStringList('favorites') ?? [];
@@ -60,6 +92,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('dark_mode', _themeMode == ThemeMode.dark);
+  }
+
+  Future<void> setColorTheme(String id) async {
+    if (_colorThemeId == id) return;
+    _colorThemeId = id;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('color_theme', id);
   }
 
   Future<void> toggleFavorite(int id) async {

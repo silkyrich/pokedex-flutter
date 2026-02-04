@@ -305,15 +305,13 @@ class _MobileDrawer extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ListenableBuilder(
-                      listenable: appState,
-                      builder: (context, _) => _DrawerBottomButton(
-                        icon: appState.themeMode == ThemeMode.dark
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
-                        label: appState.themeMode == ThemeMode.dark ? 'Light' : 'Dark',
-                        onTap: () => appState.toggleTheme(),
-                      ),
+                    child: _DrawerBottomButton(
+                      icon: Icons.palette_outlined,
+                      label: 'Theme',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _showThemePicker(context);
+                      },
                     ),
                   ),
                 ],
@@ -700,42 +698,12 @@ class _DesktopSidebar extends StatelessWidget {
             colorScheme: colorScheme,
             onTap: () => context.go('/search'),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ListenableBuilder(
-              listenable: appState,
-              builder: (context, _) => Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () => appState.toggleTheme(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    child: Row(
-                      children: [
-                        Icon(
-                          appState.themeMode == ThemeMode.dark
-                              ? Icons.light_mode_outlined
-                              : Icons.dark_mode_outlined,
-                          size: 20,
-                          color: colorScheme.onSurface.withOpacity(0.5),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          appState.themeMode == ThemeMode.dark ? 'Light Mode' : 'Dark Mode',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          _SidebarButton(
+            icon: Icons.palette_outlined,
+            label: 'Theme',
+            isActive: false,
+            colorScheme: colorScheme,
+            onTap: () => _showThemePicker(context),
           ),
           const SizedBox(height: 16),
         ],
@@ -757,7 +725,6 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final appState = AppState();
 
     return AppBar(
       toolbarHeight: 60,
@@ -799,20 +766,227 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
           tooltip: 'Search',
           onPressed: onSearch,
         ),
-        ListenableBuilder(
-          listenable: appState,
-          builder: (context, _) => IconButton(
-            icon: Icon(
-              appState.themeMode == ThemeMode.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-            ),
-            tooltip: appState.themeMode == ThemeMode.dark ? 'Light mode' : 'Dark mode',
-            onPressed: () => appState.toggleTheme(),
-          ),
+        IconButton(
+          icon: const Icon(Icons.palette_outlined),
+          tooltip: 'Theme',
+          onPressed: () => _showThemePicker(context),
         ),
         const SizedBox(width: 4),
       ],
+    );
+  }
+}
+
+// --- Theme Picker ---
+
+void _showThemePicker(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => const _ThemePickerSheet(),
+  );
+}
+
+class _ThemePickerSheet extends StatelessWidget {
+  const _ThemePickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListenableBuilder(
+      listenable: AppState(),
+      builder: (context, _) {
+        final appState = AppState();
+        final isDark = appState.themeMode == ThemeMode.dark;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Theme',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Dark mode toggle
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => appState.toggleTheme(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.1),
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                            size: 22,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              isDark ? 'Dark Mode' : 'Light Mode',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: isDark,
+                            onChanged: (_) => appState.toggleTheme(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Color label
+                Text(
+                  'COLOUR',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                    color: colorScheme.onSurface.withOpacity(0.4),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Color grid
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.8,
+                  children: [
+                    for (final theme in appColorThemes)
+                      _ColorThemeTile(
+                        theme: theme,
+                        isSelected: appState.colorThemeId == theme.id,
+                        onTap: () => appState.setColorTheme(theme.id),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ColorThemeTile extends StatelessWidget {
+  final AppColorTheme theme;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ColorThemeTile({
+    required this.theme,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.1),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: theme.seed,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: theme.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                theme.label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
