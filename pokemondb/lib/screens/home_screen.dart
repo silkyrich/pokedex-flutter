@@ -146,6 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitial();
   }
 
+  void _setTypeFilter(String type) {
+    context.go('/?type=$type');
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -247,6 +251,27 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: 'Gen $i',
                           selected: _selectedGen == i,
                           onTap: () => _selectGen(i),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Type filter chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final type in TypeChart.types)
+                        _TypeFilterChip(
+                          type: type,
+                          selected: _filterType == type,
+                          onTap: () {
+                            if (_filterType == type) {
+                              _clearTypeFilter();
+                            } else {
+                              _setTypeFilter(type);
+                            }
+                          },
                         ),
                     ],
                   ),
@@ -442,6 +467,72 @@ class _GenChip extends StatelessWidget {
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 13,
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TypeFilterChip extends StatelessWidget {
+  final String type;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TypeFilterChip({required this.type, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final typeColor = TypeColors.getColor(type);
+    final textColor = TypeColors.getTextColor(type);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: selected
+                  ? typeColor
+                  : isDark
+                      ? typeColor.withOpacity(0.1)
+                      : typeColor.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected
+                    ? typeColor
+                    : typeColor.withOpacity(isDark ? 0.25 : 0.2),
+                width: selected ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(Icons.check_rounded, size: 14, color: textColor),
+                  ),
+                Text(
+                  type[0].toUpperCase() + type.substring(1),
+                  style: TextStyle(
+                    color: selected
+                        ? textColor
+                        : isDark
+                            ? typeColor
+                            : typeColor.withOpacity(0.9),
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

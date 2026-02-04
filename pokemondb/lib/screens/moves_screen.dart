@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
 import '../widgets/type_badge.dart';
@@ -179,13 +180,23 @@ class _MovesScreenState extends State<MovesScreen> {
                               ],
                               rows: filtered.map((m) {
                                 return DataRow(cells: [
-                                  DataCell(Text(
-                                    m.name,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurface,
+                                  DataCell(
+                                    MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () => context.go('/moves/${m.rawName}'),
+                                        child: Text(
+                                          m.name,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: theme.colorScheme.primary,
+                                            decoration: TextDecoration.underline,
+                                            decorationColor: theme.colorScheme.primary.withOpacity(0.3),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  )),
+                                  ),
                                   DataCell(m.type.isNotEmpty ? TypeBadge(type: m.type, navigable: true) : const Text('—')),
                                   DataCell(_CategoryIcon(category: m.damageClass)),
                                   DataCell(Text(

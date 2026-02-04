@@ -7,6 +7,7 @@ import 'screens/moves_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/team_screen.dart';
+import 'screens/move_detail_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -26,6 +27,13 @@ final _router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
         GoRoute(path: '/moves', builder: (context, state) => const MovesScreen()),
+        GoRoute(
+          path: '/moves/:name',
+          builder: (context, state) {
+            final name = state.pathParameters['name']!;
+            return MoveDetailScreen(moveName: name);
+          },
+        ),
         GoRoute(path: '/types', builder: (context, state) => const TypeChartScreen()),
         GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
