@@ -11,6 +11,7 @@ class NavigationShell extends StatelessWidget {
     _NavItem('/', 'Pokedex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
     _NavItem('/moves', 'Moves', Icons.flash_on_outlined, Icons.flash_on),
     _NavItem('/types', 'Types', Icons.grid_view_outlined, Icons.grid_view_rounded),
+    _NavItem('/battle', 'Battle', Icons.compare_arrows_outlined, Icons.compare_arrows),
     _NavItem('/team', 'Team', Icons.groups_outlined, Icons.groups),
     _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
   ];
@@ -19,6 +20,8 @@ class NavigationShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
     for (int i = 0; i < _navItems.length; i++) {
       if (location == _navItems[i].path) return i;
+      // Match sub-paths like /battle/1/2 or /types/fire/vs/water
+      if (_navItems[i].path != '/' && location.startsWith(_navItems[i].path)) return i;
     }
     return 0;
   }

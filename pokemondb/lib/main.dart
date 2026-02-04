@@ -8,6 +8,8 @@ import 'screens/search_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/team_screen.dart';
 import 'screens/move_detail_screen.dart';
+import 'screens/type_matchup_screen.dart';
+import 'screens/battle_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -35,6 +37,23 @@ final _router = GoRouter(
           },
         ),
         GoRoute(path: '/types', builder: (context, state) => const TypeChartScreen()),
+        GoRoute(
+          path: '/types/:atk/vs/:def',
+          builder: (context, state) {
+            final atk = state.pathParameters['atk']!;
+            final def = state.pathParameters['def']!;
+            return TypeMatchupScreen(attackingType: atk, defendingType: def);
+          },
+        ),
+        GoRoute(path: '/battle', builder: (context, state) => const BattleScreen()),
+        GoRoute(
+          path: '/battle/:id1/:id2',
+          builder: (context, state) {
+            final id1 = int.tryParse(state.pathParameters['id1'] ?? '');
+            final id2 = int.tryParse(state.pathParameters['id2'] ?? '');
+            return BattleScreen(initialId1: id1, initialId2: id2);
+          },
+        ),
         GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
         GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
