@@ -1,0 +1,8 @@
+{
+  "name": "Pokémon Database",
+  "short_name": "PokemonDB",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#3b5ba7",
+  "theme_color": "#3b5ba7"
+}
