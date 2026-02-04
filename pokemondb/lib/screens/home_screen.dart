@@ -51,8 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 300) {
+    // Trigger load when within 500px of bottom, guarded by _loadingMore flag
+    if (!_loadingMore &&
+        _offset < _total &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 500) {
       _loadMore();
     }
   }
@@ -197,27 +200,57 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       )
-                    : GridView.builder(
+                    : CustomScrollView(
                         controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 0.82,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                        itemCount: _entries.length + (_loadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= _entries.length) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          final entry = _entries[index];
-                          return PokemonCard(
-                            pokemon: entry.basic,
-                            types: entry.types,
-                            onTap: () => context.go('/pokemon/${entry.basic.id}'),
-                          );
-                        },
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.all(16),
+                            sliver: SliverGrid(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio: 0.82,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                              ),
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final entry = _entries[index];
+                                  return PokemonCard(
+                                    pokemon: entry.basic,
+                                    types: entry.types,
+                                    onTap: () => context.go('/pokemon/${entry.basic.id}'),
+                                  );
+                                },
+                                childCount: _entries.length,
+                              ),
+                            ),
+                          ),
+                          // Loading indicator or "all loaded" message
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: _loadingMore
+                                  ? const Center(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                          SizedBox(width: 12),
+                                          Text('Loading more Pokémon...'),
+                                        ],
+                                      ),
+                                    )
+                                  : _offset >= _total && _entries.isNotEmpty
+                                      ? Center(
+                                          child: Text(
+                                            'All ${_entries.length} Pokémon loaded',
+                                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                            ),
+                          ),
+                        ],
                       ),
           ),
         ],
