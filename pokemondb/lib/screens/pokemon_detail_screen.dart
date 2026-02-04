@@ -19,7 +19,7 @@ class PokemonDetailScreen extends StatefulWidget {
 class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   PokemonDetail? _pokemon;
   PokemonSpecies? _species;
-  List<EvolutionInfo>? _evolutions;
+  EvolutionInfo? _evoRoot;
   bool _loading = true;
   String? _error;
 
@@ -47,10 +47,10 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
       final detail = results[0] as PokemonDetail;
       final species = results[1] as PokemonSpecies;
 
-      List<EvolutionInfo>? evolutions;
+      EvolutionInfo? evoRoot;
       if (species.evolutionChainId != null) {
         try {
-          evolutions = await PokeApiService.getEvolutionChain(species.evolutionChainId!);
+          evoRoot = await PokeApiService.getEvolutionChain(species.evolutionChainId!);
         } catch (_) {}
       }
 
@@ -58,7 +58,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
         setState(() {
           _pokemon = detail;
           _species = species;
-          _evolutions = evolutions;
+          _evoRoot = evoRoot;
           _loading = false;
         });
       }
@@ -263,7 +263,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                     const SizedBox(height: 16),
                     _buildStatsSection(p, theme, isDark),
                     const SizedBox(height: 20),
-                    if (_evolutions != null && _evolutions!.length > 1) ...[
+                    if (_evoRoot != null && _evoRoot!.flatten().length > 1) ...[
                       _buildEvolutionSection(theme, isDark),
                       const SizedBox(height: 20),
                     ],
@@ -443,37 +443,100 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   }
 
   Widget _buildEvolutionSection(ThemeData theme, bool isDark) {
-    return _sectionCard('Evolution Chain', theme, Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (int i = 0; i < _evolutions!.length; i++) ...[
-          if (i > 0)
-            Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.arrow_forward_rounded, color: theme.colorScheme.onSurface.withOpacity(0.3), size: 20),
-              if (_evolutions![i].displayTrigger.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    _evolutions![i].displayTrigger,
-                    style: TextStyle(fontSize: 10, color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
-                  ),
+    return _sectionCard('Evolution Chain', theme, _buildEvoTree(_evoRoot!, theme, isDark, isRoot: true));
+  }
+
+  Widget _buildEvoTree(EvolutionInfo node, ThemeData theme, bool isDark, {bool isRoot = false}) {
+    final tile = _EvolutionTile(
+      evo: node,
+      isCurrentPokemon: node.id == widget.pokemonId,
+      onTap: () => context.go('/pokemon/${node.id}'),
+    );
+
+    if (node.evolvesTo.isEmpty) return tile;
+
+    final arrow = Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(Icons.arrow_forward_rounded, color: theme.colorScheme.onSurface.withOpacity(0.3), size: 20),
+    ]);
+
+    // Linear chain (single evolution path)
+    if (node.evolvesTo.length == 1) {
+      final child = node.evolvesTo.first;
+      return Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          tile,
+          Column(mainAxisSize: MainAxisSize.min, children: [
+            arrow,
+            if (child.displayTrigger.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-            ]),
-          _EvolutionTile(
-            evo: _evolutions![i],
-            isCurrentPokemon: _evolutions![i].id == widget.pokemonId,
-            onTap: () => context.go('/pokemon/${_evolutions![i].id}'),
-          ),
+                child: Text(
+                  child.displayTrigger,
+                  style: TextStyle(fontSize: 10, color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                ),
+              ),
+          ]),
+          _buildEvoTree(child, theme, isDark),
         ],
+      );
+    }
+
+    // Branching chain (e.g. Eevee)
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        tile,
+        const SizedBox(height: 8),
+        Icon(Icons.call_split_rounded, color: theme.colorScheme.onSurface.withOpacity(0.3), size: 20),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 6,
+          runSpacing: 6,
+          children: node.evolvesTo.map((child) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (child.displayTrigger.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        child.displayTrigger,
+                        style: TextStyle(fontSize: 9, color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                _EvolutionTile(
+                  evo: child,
+                  isCurrentPokemon: child.id == widget.pokemonId,
+                  onTap: () => context.go('/pokemon/${child.id}'),
+                ),
+                // If this branch continues further, show that too
+                if (child.evolvesTo.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: _buildEvoTree(child, theme, isDark),
+                  ),
+              ],
+            );
+          }).toList(),
+        ),
       ],
-    ));
+    );
   }
 
   Widget _buildTypeDefensesSection(PokemonDetail p, ThemeData theme, bool isDark) {
