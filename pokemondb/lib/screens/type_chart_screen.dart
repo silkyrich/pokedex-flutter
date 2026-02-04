@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/app_header.dart';
+import 'package:go_router/go_router.dart';
 import '../utils/type_colors.dart';
 
 class TypeChartScreen extends StatelessWidget {
@@ -7,40 +7,51 @@ class TypeChartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: const AppHeader(),
-      backgroundColor: const Color(0xFFF5F5F5),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Type Chart',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'The table below shows the effectiveness of each type. '
-                  'Rows are the attacking type, columns are the defending type. '
-                  '2× = super effective, ½× = not very effective, 0× = no effect.',
-                  style: TextStyle(color: Color(0xFF666666), fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                _buildLegend(),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
                   ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: _buildChart(),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'The table below shows the effectiveness of each type. '
+                  'Rows are the attacking type, columns are the defending type.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildLegend(theme),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap any type to view all Pokemon of that type.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: _buildChart(context, theme),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -52,70 +63,83 @@ class TypeChartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Wrap(
       spacing: 16,
       runSpacing: 8,
       children: [
-        _legendItem(const Color(0xFF5DAE5B), '2×', 'Super effective'),
-        _legendItem(const Color(0xFFFF6961), '½×', 'Not very effective'),
-        _legendItem(const Color(0xFF333333), '0×', 'No effect'),
-        _legendItem(const Color(0xFFF0F0F0), '1×', 'Normal'),
+        _legendItem(const Color(0xFF22C55E), '2x', 'Super effective', isDark),
+        _legendItem(const Color(0xFFEF4444), '1/2x', 'Not very effective', isDark),
+        _legendItem(const Color(0xFF333333), '0x', 'No effect', isDark),
+        _legendItem(isDark ? const Color(0xFF2A2A35) : const Color(0xFFF0F0F0), '1x', 'Normal', isDark),
       ],
     );
   }
 
-  Widget _legendItem(Color color, String symbol, String label) {
+  Widget _legendItem(Color color, String symbol, String label, bool isDark) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 28,
+          height: 28,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             symbol,
             style: TextStyle(
-              color: color == const Color(0xFFF0F0F0) ? Colors.grey : Colors.white,
+              color: color == const Color(0xFFF0F0F0) || (isDark && color == const Color(0xFF2A2A35))
+                  ? Colors.grey
+                  : Colors.white,
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : const Color(0xFF666666))),
       ],
     );
   }
 
-  Widget _buildChart() {
+  Widget _buildChart(BuildContext context, ThemeData theme) {
     const types = TypeChart.types;
     const eff = TypeChart.effectiveness;
-    const cellSize = 38.0;
+    const cellSize = 40.0;
+    final isDark = theme.brightness == Brightness.dark;
 
     return DataTable(
       headingRowHeight: cellSize,
       dataRowMinHeight: cellSize,
       dataRowMaxHeight: cellSize,
-      horizontalMargin: 4,
-      columnSpacing: 0,
-      headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F8F8)),
+      horizontalMargin: 6,
+      columnSpacing: 2,
+      headingRowColor: WidgetStateProperty.all(
+        isDark ? const Color(0xFF1E1E2A) : const Color(0xFFF8F8F8),
+      ),
       columns: [
-        const DataColumn(
+        DataColumn(
           label: SizedBox(
-            width: 70,
-            child: Text('ATK ↓ / DEF →', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+            width: 76,
+            child: Text(
+              'ATK / DEF',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
           ),
         ),
         ...types.map((t) => DataColumn(
               label: SizedBox(
                 width: cellSize,
                 child: Center(
-                  child: _TypeLabel(type: t),
+                  child: _TypeLabel(type: t, onTap: () => context.go('/?type=$t')),
                 ),
               ),
             )),
@@ -123,8 +147,8 @@ class TypeChartScreen extends StatelessWidget {
       rows: List.generate(types.length, (row) {
         return DataRow(cells: [
           DataCell(SizedBox(
-            width: 70,
-            child: _TypeLabel(type: types[row]),
+            width: 76,
+            child: _TypeLabel(type: types[row], onTap: () => context.go('/?type=${types[row]}')),
           )),
           ...List.generate(types.length, (col) {
             final val = eff[row][col];
@@ -136,25 +160,53 @@ class TypeChartScreen extends StatelessWidget {
   }
 }
 
-class _TypeLabel extends StatelessWidget {
+class _TypeLabel extends StatefulWidget {
   final String type;
+  final VoidCallback onTap;
 
-  const _TypeLabel({required this.type});
+  const _TypeLabel({required this.type, required this.onTap});
+
+  @override
+  State<_TypeLabel> createState() => _TypeLabelState();
+}
+
+class _TypeLabelState extends State<_TypeLabel> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: TypeColors.getColor(type),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Text(
-        type.substring(0, 3).toUpperCase(),
-        style: TextStyle(
-          color: TypeColors.getTextColor(type),
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Tooltip(
+          message: 'View ${widget.type[0].toUpperCase()}${widget.type.substring(1)} Pokemon',
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  TypeColors.getColor(widget.type),
+                  Color.lerp(TypeColors.getColor(widget.type), Colors.black, 0.15)!,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: _hovered
+                  ? [BoxShadow(color: TypeColors.getColor(widget.type).withOpacity(0.4), blurRadius: 6)]
+                  : null,
+            ),
+            child: Text(
+              widget.type.substring(0, 3).toUpperCase(),
+              style: TextStyle(
+                color: TypeColors.getTextColor(widget.type),
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -168,20 +220,22 @@ class _EffCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Color bg;
     Color fg;
     String text;
 
     if (value == 0) {
-      bg = const Color(0xFF333333);
+      bg = isDark ? const Color(0xFF333340) : const Color(0xFF333333);
       fg = Colors.white;
       text = '0';
     } else if (value == 0.5) {
-      bg = const Color(0xFFFF6961);
+      bg = isDark ? const Color(0xFF7F2520) : const Color(0xFFEF4444);
       fg = Colors.white;
-      text = '½';
+      text = '1/2';
     } else if (value == 2) {
-      bg = const Color(0xFF5DAE5B);
+      bg = isDark ? const Color(0xFF166534) : const Color(0xFF22C55E);
       fg = Colors.white;
       text = '2';
     } else {
@@ -191,19 +245,19 @@ class _EffCell extends StatelessWidget {
     }
 
     return Container(
-      width: 30,
-      height: 30,
+      width: 32,
+      height: 32,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: fg,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
-import '../widgets/app_header.dart';
 import '../widgets/type_badge.dart';
+import '../utils/type_colors.dart';
 
 class MovesScreen extends StatefulWidget {
   const MovesScreen({super.key});
@@ -25,7 +25,6 @@ class _MovesScreenState extends State<MovesScreen> {
 
   Future<void> _loadMoves() async {
     try {
-      // Load the first 100 moves for a reasonable initial set
       final futures = <Future<MoveDetail>>[];
       for (int i = 1; i <= 165; i++) {
         futures.add(PokeApiService.getMoveDetail(i.toString()));
@@ -78,108 +77,139 @@ class _MovesScreenState extends State<MovesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final filtered = _filteredMoves;
 
     return Scaffold(
-      appBar: const AppHeader(),
-      backgroundColor: const Color(0xFFF5F5F5),
       body: _loading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF3B5BA7)),
-                  SizedBox(height: 16),
-                  Text('Loading moves...', style: TextStyle(color: Color(0xFF666666))),
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: CircularProgressIndicator(strokeWidth: 3, color: theme.colorScheme.primary),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Loading moves...', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))),
                 ],
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1000),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Pokémon Moves',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+                      Text(
+                        'Pokemon Moves',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'A list of all Pokémon moves with their power, accuracy, and PP.',
-                        style: TextStyle(color: Color(0xFF666666), fontSize: 14),
+                      Text(
+                        'A list of all Pokemon moves with their power, accuracy, and PP.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       // Filters
                       Wrap(
                         spacing: 12,
                         runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          _buildDropdown(
-                            'Sort by:',
-                            _sortBy,
-                            {'name': 'Name', 'power': 'Power', 'accuracy': 'Accuracy', 'pp': 'PP'},
-                            (v) => setState(() => _sortBy = v!),
-                          ),
-                          _buildDropdown(
-                            'Type:',
-                            _filterType,
-                            {
-                              'all': 'All',
-                              'normal': 'Normal', 'fire': 'Fire', 'water': 'Water',
-                              'electric': 'Electric', 'grass': 'Grass', 'ice': 'Ice',
-                              'fighting': 'Fighting', 'poison': 'Poison', 'ground': 'Ground',
-                              'flying': 'Flying', 'psychic': 'Psychic', 'bug': 'Bug',
-                              'rock': 'Rock', 'ghost': 'Ghost', 'dragon': 'Dragon',
-                              'dark': 'Dark', 'steel': 'Steel', 'fairy': 'Fairy',
-                            },
-                            (v) => setState(() => _filterType = v!),
+                          _buildDropdown('Sort by', _sortBy, {
+                            'name': 'Name', 'power': 'Power', 'accuracy': 'Accuracy', 'pp': 'PP',
+                          }, (v) => setState(() => _sortBy = v!), theme, isDark),
+                          _buildDropdown('Type', _filterType, {
+                            'all': 'All Types',
+                            ...{for (final t in TypeChart.types) t: t[0].toUpperCase() + t.substring(1)},
+                          }, (v) => setState(() => _filterType = v!), theme, isDark),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${filtered.length} moves',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       // Moves table
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
-                        ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            headingRowColor: WidgetStateProperty.all(const Color(0xFF3B5BA7)),
-                            headingTextStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                      Card(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: DataTable(
+                              headingRowColor: WidgetStateProperty.all(
+                                isDark
+                                    ? theme.colorScheme.primary.withOpacity(0.15)
+                                    : theme.colorScheme.primary.withOpacity(0.06),
+                              ),
+                              headingTextStyle: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                              dividerThickness: 0.5,
+                              columns: const [
+                                DataColumn(label: Text('Name')),
+                                DataColumn(label: Text('Type')),
+                                DataColumn(label: Text('Cat.')),
+                                DataColumn(label: Text('Power'), numeric: true),
+                                DataColumn(label: Text('Acc.'), numeric: true),
+                                DataColumn(label: Text('PP'), numeric: true),
+                              ],
+                              rows: filtered.map((m) {
+                                return DataRow(cells: [
+                                  DataCell(Text(
+                                    m.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  )),
+                                  DataCell(m.type.isNotEmpty ? TypeBadge(type: m.type, navigable: true) : const Text('—')),
+                                  DataCell(_CategoryIcon(category: m.damageClass)),
+                                  DataCell(Text(
+                                    m.power?.toString() ?? '—',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: m.power != null ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.3),
+                                    ),
+                                  )),
+                                  DataCell(Text(
+                                    m.accuracy != null ? '${m.accuracy}%' : '—',
+                                    style: TextStyle(
+                                      color: m.accuracy != null ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.3),
+                                    ),
+                                  )),
+                                  DataCell(Text(
+                                    m.pp?.toString() ?? '—',
+                                    style: TextStyle(
+                                      color: m.pp != null ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.3),
+                                    ),
+                                  )),
+                                ]);
+                              }).toList(),
                             ),
-                            columns: const [
-                              DataColumn(label: Text('Name')),
-                              DataColumn(label: Text('Type')),
-                              DataColumn(label: Text('Cat.')),
-                              DataColumn(label: Text('Power'), numeric: true),
-                              DataColumn(label: Text('Acc.'), numeric: true),
-                              DataColumn(label: Text('PP'), numeric: true),
-                            ],
-                            rows: filtered.map((m) {
-                              return DataRow(cells: [
-                                DataCell(Text(
-                                  m.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF3B5BA7),
-                                  ),
-                                )),
-                                DataCell(m.type.isNotEmpty ? TypeBadge(type: m.type) : const Text('—')),
-                                DataCell(_CategoryIcon(category: m.damageClass)),
-                                DataCell(Text(m.power?.toString() ?? '—')),
-                                DataCell(Text(m.accuracy != null ? '${m.accuracy}%' : '—')),
-                                DataCell(Text(m.pp?.toString() ?? '—')),
-                              ]);
-                            }).toList(),
                           ),
                         ),
                       ),
@@ -197,23 +227,26 @@ class _MovesScreenState extends State<MovesScreen> {
     String value,
     Map<String, String> items,
     ValueChanged<String?> onChanged,
+    ThemeData theme,
+    bool isDark,
   ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6))),
         const SizedBox(width: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: const Color(0xFFCCCCCC)),
+            color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200),
           ),
           child: DropdownButton<String>(
             value: value,
             underline: const SizedBox.shrink(),
             isDense: true,
+            borderRadius: BorderRadius.circular(12),
             items: items.entries.map((e) {
               return DropdownMenuItem(value: e.key, child: Text(e.value, style: const TextStyle(fontSize: 13)));
             }).toList(),
@@ -273,9 +306,18 @@ class _CategoryIcon extends StatelessWidget {
         icon = Icons.help_outline;
         color = Colors.grey;
     }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Tooltip(
       message: category.isNotEmpty ? category[0].toUpperCase() + category.substring(1) : '',
-      child: Icon(icon, size: 18, color: color),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
     );
   }
 }
