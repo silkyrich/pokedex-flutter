@@ -697,17 +697,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                       ),
                     ),
                   ),
-                _EvolutionTile(
-                  evo: child,
-                  isCurrentPokemon: child.id == widget.pokemonId,
-                  onTap: () => context.go('/pokemon/${child.id}'),
-                ),
-                // If this branch continues further, show that too
-                if (child.evolvesTo.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: _buildEvoTree(child, theme, isDark),
-                  ),
+                _buildEvoTree(child, theme, isDark),
               ],
             );
           }).toList(),
