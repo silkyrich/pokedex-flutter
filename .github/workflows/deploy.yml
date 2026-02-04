@@ -32,8 +32,10 @@ jobs:
         working-directory: pokemondb
         run: flutter build web --release --base-href /pokedex-flutter/
 
-      - name: Copy .nojekyll
-        run: cp .nojekyll pokemondb/build/web/.nojekyll
+      - name: Copy .nojekyll and 404.html
+        run: |
+          cp .nojekyll pokemondb/build/web/.nojekyll
+          cp pokemondb/build/web/index.html pokemondb/build/web/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
