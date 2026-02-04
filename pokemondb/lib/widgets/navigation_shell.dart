@@ -796,12 +796,13 @@ class _ThemePickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final lightThemes = appColorThemes.where((t) => !t.isDark).toList();
+    final darkThemes = appColorThemes.where((t) => t.isDark).toList();
 
     return ListenableBuilder(
       listenable: AppState(),
       builder: (context, _) {
         final appState = AppState();
-        final isDark = appState.themeMode == ThemeMode.dark;
 
         return SafeArea(
           child: Padding(
@@ -834,77 +835,60 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Dark mode toggle
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.1),
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                        size: 22,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          isDark ? 'Dark Mode' : 'Light Mode',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                      Switch(
-                        value: isDark,
-                        onChanged: (_) => appState.toggleTheme(),
-                      ),
-                    ],
-                  ),
-                ),
+                // Light section
+                _sectionLabel(context, Icons.light_mode_rounded, 'LIGHT'),
+                const SizedBox(height: 10),
+                _themeGrid(appState, lightThemes),
                 const SizedBox(height: 20),
 
-                // Color label
-                Text(
-                  'COLOUR',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 10,
-                    color: colorScheme.onSurface.withOpacity(0.4),
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Color grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.8,
-                  children: [
-                    for (final theme in appColorThemes)
-                      _ColorThemeTile(
-                        theme: theme,
-                        isSelected: appState.colorThemeId == theme.id,
-                        onTap: () => appState.setColorTheme(theme.id),
-                      ),
-                  ],
-                ),
+                // Dark section
+                _sectionLabel(context, Icons.dark_mode_rounded, 'DARK'),
+                const SizedBox(height: 10),
+                _themeGrid(appState, darkThemes),
                 const SizedBox(height: 8),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _sectionLabel(BuildContext context, IconData icon, String text) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: colorScheme.onSurface.withOpacity(0.4)),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 10,
+            color: colorScheme.onSurface.withOpacity(0.4),
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _themeGrid(AppState appState, List<AppColorTheme> themes) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 5,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 1.2,
+      children: [
+        for (final theme in themes)
+          _ColorThemeTile(
+            theme: theme,
+            isSelected: appState.colorThemeId == theme.id,
+            onTap: () => appState.setColorTheme(theme.id),
+          ),
+      ],
     );
   }
 }
@@ -923,6 +907,7 @@ class _ColorThemeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bg = theme.isDark ? const Color(0xFF1E1E2A) : Colors.white;
 
     return Material(
       color: Colors.transparent,
@@ -933,36 +918,26 @@ class _ColorThemeTile extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
+            color: bg,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.1),
-              width: isSelected ? 2 : 1,
+              color: isSelected ? theme.seed : colorScheme.onSurface.withOpacity(0.1),
+              width: isSelected ? 2.5 : 1,
             ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: theme.seed,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: theme.accent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: theme.seed,
+                  shape: BoxShape.circle,
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                    : null,
               ),
               const SizedBox(height: 4),
               Text(
@@ -971,7 +946,7 @@ class _ColorThemeTile extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected
-                      ? colorScheme.primary
+                      ? theme.seed
                       : colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
