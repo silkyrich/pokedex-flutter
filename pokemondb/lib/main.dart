@@ -11,7 +11,6 @@ import 'screens/team_screen.dart';
 import 'screens/move_detail_screen.dart';
 import 'screens/type_matchup_screen.dart';
 import 'screens/battle_screen.dart';
-import 'screens/tools_screen.dart';
 import 'screens/stat_calculator_screen.dart';
 import 'screens/damage_calculator_screen.dart';
 import 'screens/speed_tiers_screen.dart';
@@ -65,7 +64,7 @@ final _router = GoRouter(
           },
         ),
         GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
-        GoRoute(path: '/tools', builder: (context, state) => const ToolsScreen()),
+        GoRoute(path: '/tools', redirect: (_, __) => '/'),
         GoRoute(path: '/tools/stat-calc', builder: (context, state) => const StatCalculatorScreen()),
         GoRoute(
           path: '/tools/stat-calc/:id',

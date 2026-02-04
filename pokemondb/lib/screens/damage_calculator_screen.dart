@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
+import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
 
@@ -78,6 +79,12 @@ class _DamageCalculatorScreenState extends State<DamageCalculatorScreen> {
     _atkEvs['special-attack'] = 0; _atkEvs['attack'] = 252; _atkEvs['speed'] = 252;
     _defEvs['attack'] = 0; _defEvs['special-attack'] = 0; _defEvs['speed'] = 0;
     _defEvs['hp'] = 252; _defEvs['defense'] = 252; _defEvs['special-defense'] = 4;
+    // Pre-load active Pokemon as attacker
+    final active = AppState().activePokemon;
+    if (active != null) {
+      _attacker = active;
+      _loadAttackerMoves(active);
+    }
   }
 
   int _calcStat(String stat, int baseStat, int level, Map<String, int> evs, Map<String, int> ivs, String nature) {

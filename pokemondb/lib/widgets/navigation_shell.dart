@@ -1,48 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/app_state.dart';
+import '../utils/type_colors.dart';
 
 class NavigationShell extends StatelessWidget {
   final Widget child;
 
   const NavigationShell({super.key, required this.child});
 
-  static const _navItems = [
-    _NavItem('/', 'Pokedex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
-    _NavItem('/moves', 'Moves', Icons.flash_on_outlined, Icons.flash_on),
-    _NavItem('/types', 'Types', Icons.grid_view_outlined, Icons.grid_view_rounded),
+  // Bottom bar: 3 primary destinations
+  static const _bottomItems = [
+    _NavItem('/', 'Pokédex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
     _NavItem('/battle', 'Battle', Icons.compare_arrows_outlined, Icons.compare_arrows),
     _NavItem('/team', 'Team', Icons.groups_outlined, Icons.groups),
-    _NavItem('/tools', 'Tools', Icons.build_outlined, Icons.build),
   ];
 
-  int _currentIndex(BuildContext context) {
+  // All destinations for drawer/sidebar, grouped
+  static const _drawerSections = [
+    _DrawerSection('Browse', [
+      _NavItem('/', 'Pokédex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
+      _NavItem('/moves', 'Moves', Icons.flash_on_outlined, Icons.flash_on),
+      _NavItem('/types', 'Types', Icons.grid_view_outlined, Icons.grid_view_rounded),
+    ]),
+    _DrawerSection('Compete', [
+      _NavItem('/battle', 'Battle Simulator', Icons.compare_arrows_outlined, Icons.compare_arrows),
+      _NavItem('/team', 'Team Builder', Icons.groups_outlined, Icons.groups),
+      _NavItem('/tools/damage-calc', 'Damage Calculator', Icons.local_fire_department_outlined, Icons.local_fire_department),
+      _NavItem('/tools/stat-calc', 'Stat Calculator', Icons.bar_chart_outlined, Icons.bar_chart),
+      _NavItem('/tools/speed-tiers', 'Speed Tiers', Icons.speed_outlined, Icons.speed),
+      _NavItem('/tools/counter', 'Counter Lookup', Icons.shield_outlined, Icons.shield),
+    ]),
+    _DrawerSection('Track', [
+      _NavItem('/tools/nuzlocke', 'Nuzlocke Run', Icons.map_outlined, Icons.map),
+      _NavItem('/tools/shiny', 'Shiny Hunter', Icons.auto_awesome_outlined, Icons.auto_awesome),
+    ]),
+    _DrawerSection('Collection', [
+      _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
+    ]),
+  ];
+
+  int _bottomIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
-    for (int i = 0; i < _navItems.length; i++) {
-      if (location == _navItems[i].path) return i;
-      // Match sub-paths like /battle/1/2 or /types/fire/vs/water
-      if (_navItems[i].path != '/' && location.startsWith(_navItems[i].path)) return i;
+    for (int i = 0; i < _bottomItems.length; i++) {
+      if (location == _bottomItems[i].path) return i;
+      if (_bottomItems[i].path != '/' && location.startsWith(_bottomItems[i].path)) return i;
+    }
+    // If we're on a non-bottom-bar page, return -1 (no selection)
+    if (location.startsWith('/moves') ||
+        location.startsWith('/types') ||
+        location.startsWith('/tools') ||
+        location.startsWith('/favorites') ||
+        location.startsWith('/search') ||
+        location.startsWith('/pokemon')) {
+      return -1;
     }
     return 0;
   }
 
-  void _onItemTapped(BuildContext context, int index) {
-    context.go(_navItems[index].path);
+  static String _currentPath(BuildContext context) {
+    return GoRouterState.of(context).uri.toString();
   }
 
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 800;
-    final selectedIndex = _currentIndex(context);
 
     if (isWide) {
       return Scaffold(
         body: Row(
           children: [
-            _DesktopSidebar(
-              selectedIndex: selectedIndex,
-              onItemTapped: (i) => _onItemTapped(context, i),
-            ),
+            _DesktopSidebar(currentPath: _currentPath(context)),
             const VerticalDivider(width: 1),
             Expanded(child: child),
           ],
@@ -50,16 +77,19 @@ class NavigationShell extends StatelessWidget {
       );
     }
 
+    final bottomIndex = _bottomIndex(context);
+
     return Scaffold(
       appBar: _MobileAppBar(
         onSearch: () => context.go('/search'),
       ),
+      drawer: _MobileDrawer(currentPath: _currentPath(context)),
       body: child,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (i) => _onItemTapped(context, i),
+        selectedIndex: bottomIndex.clamp(0, _bottomItems.length - 1),
+        onDestinationSelected: (i) => context.go(_bottomItems[i].path),
         height: 68,
-        destinations: _navItems.map((item) => NavigationDestination(
+        destinations: _bottomItems.map((item) => NavigationDestination(
           icon: Icon(item.icon),
           selectedIcon: Icon(item.activeIcon),
           label: item.label,
@@ -78,15 +108,333 @@ class _NavItem {
   const _NavItem(this.path, this.label, this.icon, this.activeIcon);
 }
 
-class _DesktopSidebar extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onItemTapped;
+class _DrawerSection {
+  final String title;
+  final List<_NavItem> items;
 
-  const _DesktopSidebar({required this.selectedIndex, required this.onItemTapped});
+  const _DrawerSection(this.title, this.items);
+}
+
+// --- Mobile Drawer ---
+
+class _MobileDrawer extends StatelessWidget {
+  final String currentPath;
+
+  const _MobileDrawer({required this.currentPath});
+
+  bool _isActive(String path) {
+    if (path == '/') return currentPath == '/';
+    return currentPath.startsWith(path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final appState = AppState();
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.7)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.catching_pokemon, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'PokédexDB',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          color: colorScheme.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        'Pokemon Database',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+
+            // Active Pokemon context
+            ListenableBuilder(
+              listenable: appState,
+              builder: (context, _) {
+                final active = appState.activePokemon;
+                if (active == null) return const SizedBox.shrink();
+                final primaryType = active.types.isNotEmpty ? active.types.first.name : 'normal';
+                final typeColor = TypeColors.getColor(primaryType);
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: typeColor.withOpacity(isDark ? 0.15 : 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: typeColor.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.network(
+                        active.spriteUrl,
+                        width: 40,
+                        height: 40,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.catching_pokemon,
+                          size: 40,
+                          color: typeColor.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Viewing',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface.withOpacity(0.4),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text(
+                              active.displayName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '#${active.id}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            // Sections
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  for (final section in NavigationShell._drawerSections) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                      child: Text(
+                        section.title.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.onSurface.withOpacity(0.35),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                    for (final item in section.items)
+                      _DrawerItem(
+                        item: item,
+                        isActive: _isActive(item.path),
+                        onTap: () {
+                          Navigator.of(context).pop(); // close drawer
+                          context.go(item.path);
+                        },
+                      ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Bottom: search + theme
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _DrawerBottomButton(
+                      icon: Icons.search_rounded,
+                      label: 'Search',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.go('/search');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ListenableBuilder(
+                      listenable: appState,
+                      builder: (context, _) => _DrawerBottomButton(
+                        icon: appState.themeMode == ThemeMode.dark
+                            ? Icons.light_mode_outlined
+                            : Icons.dark_mode_outlined,
+                        label: appState.themeMode == ThemeMode.dark ? 'Light' : 'Dark',
+                        onTap: () => appState.toggleTheme(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  final _NavItem item;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _DrawerItem({required this.item, required this.isActive, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? colorScheme.primary.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isActive ? item.activeIcon : item.icon,
+                  size: 20,
+                  color: isActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withOpacity(0.5),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 13,
+                    color: isActive
+                        ? colorScheme.primary
+                        : colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerBottomButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DrawerBottomButton({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: colorScheme.onSurface.withOpacity(0.5)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- Desktop Sidebar (grouped like drawer) ---
+
+class _DesktopSidebar extends StatelessWidget {
+  final String currentPath;
+
+  const _DesktopSidebar({required this.currentPath});
+
+  bool _isActive(String path) {
+    if (path == '/') return currentPath == '/';
+    return currentPath.startsWith(path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final appState = AppState();
 
     return SizedBox(
@@ -118,7 +466,7 @@ class _DesktopSidebar extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PokedexDB',
+                            'PokédexDB',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 18,
@@ -142,77 +490,155 @@ class _DesktopSidebar extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          const SizedBox(height: 8),
-          // Nav items
-          ...List.generate(NavigationShell._navItems.length, (i) {
-            final item = NavigationShell._navItems[i];
-            final isSelected = i == selectedIndex;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => onItemTapped(i),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+
+          // Active Pokemon context
+          ListenableBuilder(
+            listenable: appState,
+            builder: (context, _) {
+              final active = appState.activePokemon;
+              if (active == null) return const SizedBox.shrink();
+              final primaryType = active.types.isNotEmpty ? active.types.first.name : 'normal';
+              final typeColor = TypeColors.getColor(primaryType);
+              return GestureDetector(
+                onTap: () => context.go('/pokemon/${active.id}'),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? colorScheme.primary.withOpacity(0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
+                      color: typeColor.withOpacity(isDark ? 0.15 : 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: typeColor.withOpacity(0.2)),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          isSelected ? item.activeIcon : item.icon,
-                          size: 22,
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.onSurface.withOpacity(0.5),
+                        Image.network(
+                          active.spriteUrl,
+                          width: 32,
+                          height: 32,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.catching_pokemon,
+                            size: 32,
+                            color: typeColor.withOpacity(0.5),
+                          ),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            active.displayName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         Text(
-                          item.label,
+                          '#${active.id}',
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            fontSize: 14,
-                            color: isSelected
-                                ? colorScheme.primary
-                                : colorScheme.onSurface.withOpacity(0.7),
+                            fontSize: 11,
+                            color: colorScheme.onSurface.withOpacity(0.3),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            );
-          }),
-          const Spacer(),
+              );
+            },
+          ),
+
+          // Grouped nav sections
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(top: 8),
+              children: [
+                for (final section in NavigationShell._drawerSections) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                    child: Text(
+                      section.title.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.onSurface.withOpacity(0.3),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  for (final item in section.items) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => context.go(item.path),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _isActive(item.path)
+                                  ? colorScheme.primary.withOpacity(0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _isActive(item.path) ? item.activeIcon : item.icon,
+                                  size: 20,
+                                  color: _isActive(item.path)
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    fontWeight: _isActive(item.path) ? FontWeight.w700 : FontWeight.w500,
+                                    fontSize: 13,
+                                    color: _isActive(item.path)
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+
           // Bottom actions
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Material(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               child: InkWell(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 onTap: () => context.go('/search'),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Row(
                     children: [
-                      Icon(Icons.search, size: 22, color: colorScheme.onSurface.withOpacity(0.5)),
-                      const SizedBox(width: 14),
+                      Icon(Icons.search, size: 20, color: colorScheme.onSurface.withOpacity(0.5)),
+                      const SizedBox(width: 12),
                       Text(
                         'Search',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          fontSize: 14,
+                          fontSize: 13,
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
@@ -228,27 +654,27 @@ class _DesktopSidebar extends StatelessWidget {
               listenable: appState,
               builder: (context, _) => Material(
                 color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   onTap: () => appState.toggleTheme(),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     child: Row(
                       children: [
                         Icon(
                           appState.themeMode == ThemeMode.dark
                               ? Icons.light_mode_outlined
                               : Icons.dark_mode_outlined,
-                          size: 22,
+                          size: 20,
                           color: colorScheme.onSurface.withOpacity(0.5),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 12),
                         Text(
                           appState.themeMode == ThemeMode.dark ? 'Light Mode' : 'Dark Mode',
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: 13,
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
@@ -266,6 +692,8 @@ class _DesktopSidebar extends StatelessWidget {
   }
 }
 
+// --- Mobile App Bar ---
+
 class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onSearch;
 
@@ -281,6 +709,7 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       toolbarHeight: 60,
+      // Leading is auto-populated with hamburger icon when drawer is present
       title: GestureDetector(
         onTap: () => context.go('/'),
         child: MouseRegion(
@@ -300,7 +729,7 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'PokedexDB',
+                'PokédexDB',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18,

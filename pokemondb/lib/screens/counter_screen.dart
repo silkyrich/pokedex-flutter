@@ -34,7 +34,16 @@ class _CounterScreenState extends State<CounterScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.pokemonId != null) _loadPokemon(widget.pokemonId!);
+    if (widget.pokemonId != null) {
+      _loadPokemon(widget.pokemonId!);
+    } else {
+      final active = AppState().activePokemon;
+      if (active != null) {
+        _target = active;
+        _analyzeCounters(active);
+        _analyzeTeamCounters(active);
+      }
+    }
   }
 
   Future<void> _loadPokemon(int id) async {

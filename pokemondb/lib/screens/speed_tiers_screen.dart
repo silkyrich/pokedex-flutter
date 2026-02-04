@@ -40,7 +40,13 @@ class _SpeedTiersScreenState extends State<SpeedTiersScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTeamEntries();
+    _loadTeamEntries().then((_) {
+      // Also add active Pokemon if not already on team
+      final active = AppState().activePokemon;
+      if (active != null && !_addedIds.contains(active.id) && !AppState().team.contains(active.id)) {
+        _addPokemon(PokemonBasic(id: active.id, name: active.name, url: ''));
+      }
+    });
   }
 
   int _calcSpeed(int base, int level, int ev, int iv, double natureMod) {
