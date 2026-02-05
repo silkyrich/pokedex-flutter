@@ -275,45 +275,109 @@ class _HomeScreenState extends State<HomeScreen> {
     final crossAxisCount = (baseColumns / AppState().cardScale).round().clamp(2, 15);
 
     return Scaffold(
-      body: Column(
-        children: [
-          // Compact header + filter bar
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title row
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Pokédex',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
+      body: _loading
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 48, height: 48,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: colorScheme.primary,
                     ),
-                    if (_entries.isNotEmpty && !_loading)
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _needsFullLoad && _entries.isNotEmpty
+                        ? 'Loading all Pokemon for sorting... ${_entries.length}/$_total'
+                        : 'Loading Pokemon...',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.red.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                        child: Text(
-                          '${_entries.length}',
-                          style: TextStyle(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
+                        child: const Icon(Icons.error_outline_rounded, size: 40, color: Colors.red),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                      const SizedBox(height: 16),
+                      Text('Something went wrong', style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      Text(
+                        _error!,
+                        style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: _loadInitial,
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
+                )
+              : CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    // Auto-hiding header with title and filters
+                    SliverAppBar(
+                      floating: true,
+                      snap: true,
+                      expandedHeight: _filtersExpanded ? null : 140,
+                      collapsedHeight: 140,
+                      toolbarHeight: 140,
+                      backgroundColor: isDark ? const Color(0xFF121218) : const Color(0xFFF8F9FA),
+                      surfaceTintColor: Colors.transparent,
+                      flexibleSpace: FlexibleSpaceBar(
+                        background: Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title row
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Pokédex',
+                                      style: theme.textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_entries.isNotEmpty && !_loading)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.primary.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        '${_entries.length}',
+                                        style: TextStyle(
+                                          color: colorScheme.primary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
                 // Filter bar
                 _FilterBar(
                   activeFilterCount: _activeFilterCount,
@@ -376,94 +440,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       context.go('/');
                     },
                   ),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
-          ),
-          // Grid
-          Expanded(
-            child: _loading
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 48, height: 48,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          _needsFullLoad && _entries.isNotEmpty
-                              ? 'Loading all Pokemon for sorting... ${_entries.length}/$_total'
-                              : 'Loading Pokemon...',
-                          style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.error_outline_rounded, size: 40, color: Colors.red),
-                            ),
-                            const SizedBox(height: 16),
-                            Text('Something went wrong', style: theme.textTheme.titleMedium),
-                            const SizedBox(height: 8),
-                            Text(
-                              _error!,
-                              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
-                            ),
-                            const SizedBox(height: 20),
-                            FilledButton.icon(
-                              onPressed: _loadInitial,
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text('Try Again'),
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Empty state or grid
+                    if (_entries.isEmpty)
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.search_off_rounded, size: 48, color: colorScheme.onSurface.withOpacity(0.2)),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No Pokemon match these filters',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface.withOpacity(0.5),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextButton.icon(
+                                onPressed: () => context.go('/'),
+                                icon: const Icon(Icons.clear_all_rounded, size: 18),
+                                label: const Text('Clear filters'),
+                              ),
+                            ],
+                          ),
                         ),
                       )
-                    : _entries.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.search_off_rounded, size: 48, color: colorScheme.onSurface.withOpacity(0.2)),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No Pokemon match these filters',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurface.withOpacity(0.5),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton.icon(
-                                  onPressed: () => context.go('/'),
-                                  icon: const Icon(Icons.clear_all_rounded, size: 18),
-                                  label: const Text('Clear filters'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : CustomScrollView(
-                            controller: _scrollController,
-                            slivers: [
-                              SliverPadding(
+                    else ...[
+                      SliverPadding(
                                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                 sliver: SliverGrid(
                                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -531,10 +542,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ],
-                          ),
-          ),
-        ],
-      ),
+                          ],
+                        ),
     );
   }
 }
