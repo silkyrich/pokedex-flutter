@@ -218,7 +218,7 @@ class _TypeMatchupScreenState extends State<TypeMatchupScreen> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                // Battle compare CTA
+                // Head to head compare CTA
                 Center(
                   child: FilledButton.icon(
                     onPressed: () => context.go('/battle'),

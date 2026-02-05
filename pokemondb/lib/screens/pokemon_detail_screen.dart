@@ -584,7 +584,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
         ),
         _QuickActionButton(
           icon: Icons.compare_arrows,
-          label: 'Battle',
+          label: 'Compare',
           color: typeColor,
           isDark: isDark,
           onTap: () => context.go('/battle/${p.id}/25'),

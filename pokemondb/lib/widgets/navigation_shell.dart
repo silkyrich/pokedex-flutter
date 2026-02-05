@@ -11,7 +11,7 @@ class NavigationShell extends StatelessWidget {
   // Bottom bar: 4 primary destinations
   static const _bottomItems = [
     _NavItem('/', 'Pokédex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
-    _NavItem('/battle', 'Battle', Icons.compare_arrows_outlined, Icons.compare_arrows),
+    _NavItem('/battle', 'Compare', Icons.compare_arrows_outlined, Icons.compare_arrows),
     _NavItem('/quiz', 'Quiz', Icons.quiz_outlined, Icons.quiz),
     _NavItem('/team', 'Team', Icons.groups_outlined, Icons.groups),
   ];
@@ -24,7 +24,7 @@ class NavigationShell extends StatelessWidget {
       _NavItem('/types', 'Types', Icons.grid_view_outlined, Icons.grid_view_rounded),
     ]),
     _DrawerSection('Compete', [
-      _NavItem('/battle', 'Battle Simulator', Icons.compare_arrows_outlined, Icons.compare_arrows),
+      _NavItem('/battle', 'Head to Head', Icons.compare_arrows_outlined, Icons.compare_arrows),
       _NavItem('/team', 'Team Builder', Icons.groups_outlined, Icons.groups),
       _NavItem('/tools/damage-calc', 'Damage Calculator', Icons.local_fire_department_outlined, Icons.local_fire_department),
       _NavItem('/tools/stat-calc', 'Stat Calculator', Icons.bar_chart_outlined, Icons.bar_chart),

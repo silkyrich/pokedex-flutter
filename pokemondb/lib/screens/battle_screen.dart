@@ -196,7 +196,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Battle Simulator',
+                  'Head to Head',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
@@ -458,7 +458,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
               children: [
                 Icon(Icons.military_tech_rounded, color: theme.colorScheme.primary, size: 22),
                 const SizedBox(width: 8),
-                Text('Battle Verdict', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Matchup Verdict', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               ],
             ),
             const SizedBox(height: 16),
