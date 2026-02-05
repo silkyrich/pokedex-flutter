@@ -2,17 +2,11 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DexGuide</title>
-
-  <!-- OG meta tags for crawlers are handled by Cloudflare Worker (see cloudflare-worker/worker.js) -->
-
-  <script>
-    // GitHub Pages SPA redirect: store the deep link path so index.html
-    // can restore it via history.replaceState after the Flutter app loads.
-    sessionStorage.setItem('redirectPath', location.pathname + location.search + location.hash);
-    location.replace('https://dexguide.gg/');
-  </script>
+  <!-- Fallback 404 handler. Primary SPA routing is via Cloudflare Pages _redirects. -->
+  <meta http-equiv="refresh" content="0;url=https://dexguide.gg/" />
 </head>
-<body></body>
+<body>
+  <p>Redirecting to <a href="https://dexguide.gg/">DexGuide</a>...</p>
+</body>
 </html>
