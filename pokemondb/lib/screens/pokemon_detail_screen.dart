@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/pokemon.dart';
 import '../models/ability.dart';
+import '../models/location.dart';
 import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../widgets/type_badge.dart';
@@ -320,6 +321,9 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                       _buildBreedingSection(_species!, theme),
                       const SizedBox(height: 20),
                     ],
+                    // Phase 3: Encounters
+                    _buildEncountersSection(p, theme),
+                    const SizedBox(height: 20),
                     if (_evoRoot != null && _evoRoot!.flatten().length > 1) ...[
                       _buildEvolutionSection(theme, isDark),
                       const SizedBox(height: 20),
@@ -989,6 +993,162 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
     final femalePercent = (genderRate / 8 * 100).toStringAsFixed(1);
     final malePercent = ((8 - genderRate) / 8 * 100).toStringAsFixed(1);
     return '$malePercent% Male / $femalePercent% Female';
+  }
+
+  // Phase 3: Encounters Section
+  Widget _buildEncountersSection(PokemonDetail p, ThemeData theme) {
+    return _sectionCard('Encounters', theme, _EncountersContent(pokemonId: p.id));
+  }
+}
+
+// Encounters content widget (extracted to manage its own state)
+class _EncountersContent extends StatefulWidget {
+  final int pokemonId;
+
+  const _EncountersContent({required this.pokemonId});
+
+  @override
+  State<_EncountersContent> createState() => _EncountersContentState();
+}
+
+class _EncountersContentState extends State<_EncountersContent> {
+  List<EncounterVersionDetail>? _encounters;
+  bool _loading = false;
+  bool _expanded = false;
+
+  Future<void> _loadEncounters() async {
+    if (_encounters != null) return;
+    setState(() => _loading = true);
+    try {
+      final encounters = await PokeApiService.getPokemonEncounters(widget.pokemonId);
+      if (mounted) {
+        setState(() {
+          _encounters = encounters;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _encounters = [];
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() => _expanded = !_expanded);
+            if (_expanded && _encounters == null) {
+              _loadEncounters();
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Wild Encounters',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          if (_loading)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            )
+          else if (_encounters == null || _encounters!.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'This Pokémon is not available in the wild.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+            )
+          else
+            ..._encounters!.map((versionDetail) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Version: ${versionDetail.version[0].toUpperCase()}${versionDetail.version.substring(1)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...versionDetail.encounterDetails.map((encounter) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            '${encounter.displayMethod} - ${encounter.chance}% (Lv. ${encounter.minLevel}-${encounter.maxLevel})',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              );
+            }),
+        ],
+      ],
+    );
   }
 }
 

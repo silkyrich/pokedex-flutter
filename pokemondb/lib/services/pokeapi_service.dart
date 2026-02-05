@@ -5,6 +5,7 @@ import '../models/move.dart';
 import '../models/ability.dart';
 import '../models/breeding.dart';
 import '../models/item.dart';
+import '../models/location.dart';
 
 class PokeApiService {
   static const String _baseUrl = 'https://pokeapi.co/api/v2';
@@ -328,6 +329,66 @@ class PokeApiService {
     final data = await _getJson('$_baseUrl/item?limit=2000');
     return (data['results'] as List)
         .map((i) => ItemBasic.fromJson(i))
+        .toList();
+  }
+
+  // Phase 3: Location and Encounter endpoints
+  static Future<List<LocationBasic>> getLocationsList({
+    int offset = 0,
+    int limit = 100,
+  }) async {
+    final data = await _getJson(
+      '$_baseUrl/location?offset=$offset&limit=$limit',
+    );
+    return (data['results'] as List)
+        .map((l) => LocationBasic.fromJson(l))
+        .toList();
+  }
+
+  static Future<LocationDetail> getLocationDetail(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/location/${nameOrId.toLowerCase()}');
+    return LocationDetail.fromJson(data);
+  }
+
+  static Future<LocationArea> getLocationArea(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/location-area/${nameOrId.toLowerCase()}');
+    return LocationArea.fromJson(data);
+  }
+
+  static Future<List<EncounterVersionDetail>> getPokemonEncounters(int pokemonId) async {
+    final data = await _getJson('$_baseUrl/pokemon/$pokemonId/encounters');
+    final encounters = <EncounterVersionDetail>[];
+
+    // The API returns a list of location areas with encounter details
+    for (final locationArea in data as List) {
+      final versionDetails = locationArea['version_details'] as List? ?? [];
+      for (final vd in versionDetails) {
+        encounters.add(EncounterVersionDetail.fromJson(vd));
+      }
+    }
+
+    return encounters;
+  }
+
+  /// Search locations by name.
+  static Future<List<LocationBasic>> searchLocations(String query) async {
+    final data = await _getJson('$_baseUrl/location?limit=1000');
+    final all = (data['results'] as List)
+        .map((l) => LocationBasic.fromJson(l))
+        .toList();
+    final q = query.toLowerCase();
+    return all
+        .where((l) =>
+            l.name.contains(q) ||
+            l.displayName.toLowerCase().contains(q))
+        .toList();
+  }
+
+  /// Pre-warm the full locations list cache.
+  static Future<List<LocationBasic>> getAllLocationsBasic() async {
+    final data = await _getJson('$_baseUrl/location?limit=1000');
+    return (data['results'] as List)
+        .map((l) => LocationBasic.fromJson(l))
         .toList();
   }
 }

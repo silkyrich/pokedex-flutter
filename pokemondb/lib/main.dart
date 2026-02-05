@@ -25,6 +25,8 @@ import 'screens/stats_guide_screen.dart';
 import 'screens/official_links_screen.dart';
 import 'screens/items_screen.dart';
 import 'screens/item_detail_screen.dart';
+import 'screens/locations_screen.dart';
+import 'screens/location_detail_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -105,6 +107,14 @@ final _router = GoRouter(
           builder: (context, state) {
             final name = state.pathParameters['name']!;
             return ItemDetailScreen(itemName: name);
+          },
+        ),
+        GoRoute(path: '/locations', builder: (context, state) => const LocationsScreen()),
+        GoRoute(
+          path: '/locations/:name',
+          builder: (context, state) {
+            final name = state.pathParameters['name']!;
+            return LocationDetailScreen(locationName: name);
           },
         ),
         GoRoute(
