@@ -166,11 +166,12 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                         if (widget.types != null) ...[
                           const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 4,
+                            runSpacing: 4,
                             children: widget.types!.map((t) {
                               return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 2),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: TypeColors.getColor(t).withOpacity(isDark ? 0.3 : 0.15),
