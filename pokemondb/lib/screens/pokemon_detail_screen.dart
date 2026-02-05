@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/pokemon.dart';
 import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
@@ -597,6 +598,19 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           onTap: () {
             appState.toggleTeamMember(p.id);
             setState(() {});
+          },
+        ),
+        _QuickActionButton(
+          icon: Icons.article_outlined,
+          label: 'Etymology',
+          color: const Color(0xFFF59E0B),
+          isDark: isDark,
+          onTap: () async {
+            final name = p.displayName.split('(')[0].trim().replaceAll(' ', '_');
+            final url = Uri.parse('https://bulbapedia.bulbagarden.net/wiki/$name_(Pokémon)');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            }
           },
         ),
       ],
