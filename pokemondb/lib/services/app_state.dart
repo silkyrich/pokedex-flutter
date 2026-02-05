@@ -47,6 +47,10 @@ class AppState extends ChangeNotifier {
   ThemeMode get themeMode =>
       colorTheme.isDark ? ThemeMode.dark : ThemeMode.light;
 
+  // Sprite style — pixel art (sprite) vs high-quality artwork
+  bool _useArtwork = false;
+  bool get useArtwork => _useArtwork;
+
   // Favorites
   final Set<int> _favorites = {};
   Set<int> get favorites => Set.unmodifiable(_favorites);
@@ -93,6 +97,9 @@ class AppState extends ChangeNotifier {
     final teamList = prefs.getStringList('team') ?? [];
     _team.addAll(teamList.map(int.parse));
 
+    // Load sprite style preference
+    _useArtwork = prefs.getBool('use_artwork') ?? false;
+
     notifyListeners();
   }
 
@@ -102,6 +109,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('color_theme', id);
+  }
+
+  Future<void> toggleSpriteStyle() async {
+    _useArtwork = !_useArtwork;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('use_artwork', _useArtwork);
   }
 
   Future<void> toggleFavorite(int id) async {

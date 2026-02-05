@@ -847,6 +847,36 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
+                // Sprite style toggle
+                _sectionLabel(context, Icons.image_outlined, 'SPRITE STYLE'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SpriteStyleOption(
+                        icon: Icons.grid_on,
+                        label: 'Pixel Art',
+                        isSelected: !appState.useArtwork,
+                        onTap: () {
+                          if (appState.useArtwork) appState.toggleSpriteStyle();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _SpriteStyleOption(
+                        icon: Icons.image,
+                        label: 'HD Artwork',
+                        isSelected: appState.useArtwork,
+                        onTap: () {
+                          if (!appState.useArtwork) appState.toggleSpriteStyle();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
                 // Light section
                 _sectionLabel(context, Icons.light_mode_rounded, 'LIGHT'),
                 const SizedBox(height: 10),
@@ -962,6 +992,84 @@ class _ColorThemeTile extends StatelessWidget {
                       : colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpriteStyleOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SpriteStyleOption({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? colorScheme.primary.withOpacity(0.15)
+                : isDark
+                    ? Colors.white.withOpacity(0.04)
+                    : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? colorScheme.primary
+                  : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withOpacity(0.5),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              if (isSelected) ...[
+                const Spacer(),
+                Icon(
+                  Icons.check_circle,
+                  size: 18,
+                  color: colorScheme.primary,
+                ),
+              ],
             ],
           ),
         ),

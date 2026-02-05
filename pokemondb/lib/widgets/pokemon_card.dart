@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
+import '../services/app_state.dart';
 
 class PokemonCard extends StatefulWidget {
   final PokemonBasic pokemon;
@@ -141,7 +142,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                           child: Hero(
                             tag: 'pokemon-sprite-${widget.pokemon.id}',
                             child: Image.network(
-                              widget.pokemon.spriteUrl,
+                              AppState().useArtwork
+                                  ? widget.pokemon.imageUrl
+                                  : widget.pokemon.spriteUrl,
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => Icon(
                                 Icons.catching_pokemon,
