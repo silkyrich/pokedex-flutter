@@ -477,72 +477,86 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
       Map<String, MoveDetail>? moves1, Map<String, MoveDetail>? moves2) {
     double score = 0;
 
-    // Type effectiveness (weight: 3)
     final p1Types = p1.types.map((t) => t.name).toList();
     final p2Types = p2.types.map((t) => t.name).toList();
 
-    double p1EffVsP2 = 1;
+    // Type effectiveness — multiply across defender's types (weight: up to 2.5)
+    double p1BestEff = 1;
     for (final at in p1Types) {
-      double best = 0;
+      double combined = 1;
       for (final dt in p2Types) {
-        final eff = TypeChart.getEffectiveness(at, dt);
-        if (eff > best) best = eff;
+        combined *= TypeChart.getEffectiveness(at, dt);
       }
-      if (best > p1EffVsP2) p1EffVsP2 = best;
+      if (combined > p1BestEff) p1BestEff = combined;
     }
 
-    double p2EffVsP1 = 1;
+    double p2BestEff = 1;
     for (final at in p2Types) {
-      double best = 0;
+      double combined = 1;
       for (final dt in p1Types) {
-        final eff = TypeChart.getEffectiveness(at, dt);
-        if (eff > best) best = eff;
+        combined *= TypeChart.getEffectiveness(at, dt);
       }
-      if (best > p2EffVsP1) p2EffVsP1 = best;
+      if (combined > p2BestEff) p2BestEff = combined;
     }
 
-    if (p1EffVsP2 > p2EffVsP1) score += 3;
-    else if (p2EffVsP1 > p1EffVsP2) score -= 3;
+    if (p1BestEff > p2BestEff) score += 2.5;
+    else if (p2BestEff > p1BestEff) score -= 2.5;
 
-    // Stats total (weight: 2)
+    // Base stat total — scaled proportionally (weight: up to 5)
     final p1Total = p1.stats.values.fold(0, (a, b) => a + b);
     final p2Total = p2.stats.values.fold(0, (a, b) => a + b);
-    if (p1Total > p2Total + 30) score += 2;
-    else if (p2Total > p1Total + 30) score -= 2;
+    final bstMax = p1Total > p2Total ? p1Total : p2Total;
+    if (bstMax > 0) {
+      score += (p1Total - p2Total) / bstMax * 5;
+    }
 
-    // Speed advantage (weight: 1.5)
+    // Speed advantage — scaled proportionally (weight: up to 1)
     final p1Speed = p1.stats['speed'] ?? 0;
     final p2Speed = p2.stats['speed'] ?? 0;
-    if (p1Speed > p2Speed) score += 1.5;
-    else if (p2Speed > p1Speed) score -= 1.5;
+    final speedMax = p1Speed > p2Speed ? p1Speed : p2Speed;
+    if (speedMax > 0) {
+      score += (p1Speed - p2Speed) / speedMax * 1;
+    }
 
-    // Move coverage (weight: 2)
+    // Move coverage — weighted by effective damage potential (weight: up to 1.5)
     if (moves1 != null && moves2 != null) {
-      int p1SuperMoves = 0;
-      int p2SuperMoves = 0;
+      final p1Atk = p1.stats['attack'] ?? 0;
+      final p1SpAtk = p1.stats['special-attack'] ?? 0;
+      final p2Atk = p2.stats['attack'] ?? 0;
+      final p2SpAtk = p2.stats['special-attack'] ?? 0;
 
+      double p1BestDmg = 0;
       for (final m in moves1.values) {
         if (m.type == null || m.power == null || m.power == 0) continue;
+        double mult = 1;
         for (final dt in p2Types) {
-          if (TypeChart.getEffectiveness(m.type!, dt) >= 2) {
-            p1SuperMoves++;
-            break;
-          }
+          mult *= TypeChart.getEffectiveness(m.type!, dt);
         }
+        if (mult < 1) continue; // skip resisted moves
+        final isStab = p1Types.contains(m.type);
+        final atkStat = (m.damageClass == 'physical' ? p1Atk : p1SpAtk).toDouble();
+        final dmg = m.power! * mult * (isStab ? 1.5 : 1) * atkStat;
+        if (dmg > p1BestDmg) p1BestDmg = dmg;
       }
 
+      double p2BestDmg = 0;
       for (final m in moves2.values) {
         if (m.type == null || m.power == null || m.power == 0) continue;
+        double mult = 1;
         for (final dt in p1Types) {
-          if (TypeChart.getEffectiveness(m.type!, dt) >= 2) {
-            p2SuperMoves++;
-            break;
-          }
+          mult *= TypeChart.getEffectiveness(m.type!, dt);
         }
+        if (mult < 1) continue;
+        final isStab = p2Types.contains(m.type);
+        final atkStat = (m.damageClass == 'physical' ? p2Atk : p2SpAtk).toDouble();
+        final dmg = m.power! * mult * (isStab ? 1.5 : 1) * atkStat;
+        if (dmg > p2BestDmg) p2BestDmg = dmg;
       }
 
-      if (p1SuperMoves > p2SuperMoves) score += 2;
-      else if (p2SuperMoves > p1SuperMoves) score -= 2;
+      final dmgMax = p1BestDmg > p2BestDmg ? p1BestDmg : p2BestDmg;
+      if (dmgMax > 0) {
+        score += (p1BestDmg - p2BestDmg) / dmgMax * 1.5;
+      }
     }
 
     return score.clamp(-10, 10);
@@ -1223,6 +1237,7 @@ class _DualStatBar extends StatelessWidget {
     const maxStat = 255;
     final pct1 = (value1 / maxStat).clamp(0.0, 1.0);
     final pct2 = (value2 / maxStat).clamp(0.0, 1.0);
+    final winner = value1 > value2 ? 1 : value2 > value1 ? 2 : 0;
 
     return Row(
       children: [
@@ -1241,40 +1256,56 @@ class _DualStatBar extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 12,
-              color: value1 > value2 ? color1 : theme.colorScheme.onSurface.withOpacity(0.5),
+              color: winner == 1 ? color1 : theme.colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 14,
-              child: Stack(
-                children: [
-                  Container(color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade100),
-                  FractionallySizedBox(
-                    widthFactor: pct1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [color1, color1.withOpacity(0.7)]),
-                      ),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: pct2,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: color2, width: 3),
+          child: Column(
+            children: [
+              // Pokemon 1 bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: SizedBox(
+                  height: 7,
+                  child: Stack(
+                    children: [
+                      Container(color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade100),
+                      FractionallySizedBox(
+                        widthFactor: pct1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [color1, color1.withOpacity(0.7)]),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              // Pokemon 2 bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: SizedBox(
+                  height: 7,
+                  child: Stack(
+                    children: [
+                      Container(color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade100),
+                      FractionallySizedBox(
+                        widthFactor: pct2,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [color2, color2.withOpacity(0.7)]),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 8),
@@ -1285,7 +1316,7 @@ class _DualStatBar extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 12,
-              color: value2 > value1 ? color2 : theme.colorScheme.onSurface.withOpacity(0.5),
+              color: winner == 2 ? color2 : theme.colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
         ),
