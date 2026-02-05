@@ -72,9 +72,11 @@ class NavigationShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 800;
+    // Use desktop sidebar only on large screens (desktop/laptop)
+    // iPads (1024-1366px) will use mobile drawer for maximum space
+    final isDesktop = MediaQuery.of(context).size.width > 1200;
 
-    if (isWide) {
+    if (isDesktop) {
       return Scaffold(
         body: Row(
           children: [
