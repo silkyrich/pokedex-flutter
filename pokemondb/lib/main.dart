@@ -19,6 +19,9 @@ import 'screens/nuzlocke_screen.dart';
 import 'screens/shiny_hunter_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/quiz_screen.dart';
+import 'screens/learn_screen.dart';
+import 'screens/stats_guide_screen.dart';
+import 'screens/official_links_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -86,6 +89,9 @@ final _router = GoRouter(
         GoRoute(path: '/tools/nuzlocke', builder: (context, state) => const NuzlockeScreen()),
         GoRoute(path: '/tools/shiny', builder: (context, state) => const ShinyHunterScreen()),
         GoRoute(path: '/quiz', builder: (context, state) => const QuizScreen()),
+        GoRoute(path: '/learn', builder: (context, state) => const LearnScreen()),
+        GoRoute(path: '/stats-guide', builder: (context, state) => const StatsGuideScreen()),
+        GoRoute(path: '/official', builder: (context, state) => const OfficialLinksScreen()),
         GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
         GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),

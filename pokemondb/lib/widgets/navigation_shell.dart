@@ -38,6 +38,11 @@ class NavigationShell extends StatelessWidget {
     _DrawerSection('Challenge', [
       _NavItem('/quiz', 'Quiz', Icons.quiz_outlined, Icons.quiz),
     ]),
+    _DrawerSection('Learn', [
+      _NavItem('/learn', 'How This App Works', Icons.code_outlined, Icons.code_rounded),
+      _NavItem('/stats-guide', 'The Maths of Pokémon', Icons.bar_chart_outlined, Icons.bar_chart_rounded),
+      _NavItem('/official', 'Official Pokémon', Icons.videogame_asset_outlined, Icons.videogame_asset_rounded),
+    ]),
     _DrawerSection('Collection', [
       _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
     ]),
