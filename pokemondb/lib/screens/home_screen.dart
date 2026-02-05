@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
+import '../services/app_state.dart';
 import '../widgets/pokemon_card.dart';
 import '../utils/type_colors.dart';
 
@@ -264,13 +265,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth > 1200
+    final baseColumns = screenWidth > 1200
         ? 7
         : screenWidth > 900
             ? 5
             : screenWidth > 600
                 ? 4
                 : 3;
+    final crossAxisCount = (baseColumns / AppState().cardScale).round().clamp(2, 15);
 
     return Scaffold(
       body: Column(

@@ -51,6 +51,10 @@ class AppState extends ChangeNotifier {
   bool _useArtwork = false;
   bool get useArtwork => _useArtwork;
 
+  // Card size scale — controls how large Pokemon cards appear (0.7 = smaller, 1.3 = larger)
+  double _cardScale = 1.0;
+  double get cardScale => _cardScale;
+
   // Favorites
   final Set<int> _favorites = {};
   Set<int> get favorites => Set.unmodifiable(_favorites);
@@ -100,6 +104,9 @@ class AppState extends ChangeNotifier {
     // Load sprite style preference
     _useArtwork = prefs.getBool('use_artwork') ?? false;
 
+    // Load card scale preference
+    _cardScale = prefs.getDouble('card_scale') ?? 1.0;
+
     notifyListeners();
   }
 
@@ -116,6 +123,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('use_artwork', _useArtwork);
+  }
+
+  Future<void> setCardScale(double scale) async {
+    _cardScale = scale.clamp(0.7, 1.3);
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('card_scale', _cardScale);
   }
 
   Future<void> toggleFavorite(int id) async {

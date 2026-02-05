@@ -877,6 +877,31 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
+                // Card size slider
+                _sectionLabel(context, Icons.photo_size_select_large_outlined, 'CARD SIZE'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(Icons.zoom_out, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
+                    Expanded(
+                      child: Slider(
+                        value: appState.cardScale,
+                        min: 0.7,
+                        max: 1.3,
+                        divisions: 12,
+                        label: appState.cardScale == 1.0
+                            ? 'Default'
+                            : appState.cardScale < 1.0
+                                ? 'Smaller'
+                                : 'Larger',
+                        onChanged: (value) => appState.setCardScale(value),
+                      ),
+                    ),
+                    Icon(Icons.zoom_in, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
                 // Light section
                 _sectionLabel(context, Icons.light_mode_rounded, 'LIGHT'),
                 const SizedBox(height: 10),
