@@ -7,6 +7,73 @@ import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
 import '../utils/type_colors.dart';
 
+// Curated list of strong Pokemon for suggestions (competitive viable mons)
+const List<_SuggestedMon> _competitivePokemon = [
+  _SuggestedMon(id: 6, name: 'Charizard', types: ['fire', 'flying'], bst: 534),
+  _SuggestedMon(id: 9, name: 'Blastoise', types: ['water'], bst: 530),
+  _SuggestedMon(id: 25, name: 'Pikachu', types: ['electric'], bst: 320),
+  _SuggestedMon(id: 59, name: 'Arcanine', types: ['fire'], bst: 555),
+  _SuggestedMon(id: 65, name: 'Alakazam', types: ['psychic'], bst: 500),
+  _SuggestedMon(id: 68, name: 'Machamp', types: ['fighting'], bst: 505),
+  _SuggestedMon(id: 94, name: 'Gengar', types: ['ghost', 'poison'], bst: 500),
+  _SuggestedMon(id: 130, name: 'Gyarados', types: ['water', 'flying'], bst: 540),
+  _SuggestedMon(id: 131, name: 'Lapras', types: ['water', 'ice'], bst: 535),
+  _SuggestedMon(id: 143, name: 'Snorlax', types: ['normal'], bst: 540),
+  _SuggestedMon(id: 149, name: 'Dragonite', types: ['dragon', 'flying'], bst: 600),
+  _SuggestedMon(id: 150, name: 'Mewtwo', types: ['psychic'], bst: 680),
+  _SuggestedMon(id: 212, name: 'Scizor', types: ['bug', 'steel'], bst: 500),
+  _SuggestedMon(id: 243, name: 'Raikou', types: ['electric'], bst: 580),
+  _SuggestedMon(id: 244, name: 'Entei', types: ['fire'], bst: 580),
+  _SuggestedMon(id: 245, name: 'Suicune', types: ['water'], bst: 580),
+  _SuggestedMon(id: 248, name: 'Tyranitar', types: ['rock', 'dark'], bst: 600),
+  _SuggestedMon(id: 257, name: 'Blaziken', types: ['fire', 'fighting'], bst: 530),
+  _SuggestedMon(id: 260, name: 'Swampert', types: ['water', 'ground'], bst: 535),
+  _SuggestedMon(id: 282, name: 'Gardevoir', types: ['psychic', 'fairy'], bst: 518),
+  _SuggestedMon(id: 306, name: 'Aggron', types: ['steel', 'rock'], bst: 530),
+  _SuggestedMon(id: 334, name: 'Altaria', types: ['dragon', 'flying'], bst: 490),
+  _SuggestedMon(id: 373, name: 'Salamence', types: ['dragon', 'flying'], bst: 600),
+  _SuggestedMon(id: 376, name: 'Metagross', types: ['steel', 'psychic'], bst: 600),
+  _SuggestedMon(id: 384, name: 'Rayquaza', types: ['dragon', 'flying'], bst: 680),
+  _SuggestedMon(id: 445, name: 'Garchomp', types: ['dragon', 'ground'], bst: 600),
+  _SuggestedMon(id: 448, name: 'Lucario', types: ['fighting', 'steel'], bst: 525),
+  _SuggestedMon(id: 460, name: 'Abomasnow', types: ['grass', 'ice'], bst: 494),
+  _SuggestedMon(id: 475, name: 'Gallade', types: ['psychic', 'fighting'], bst: 518),
+  _SuggestedMon(id: 497, name: 'Serperior', types: ['grass'], bst: 528),
+  _SuggestedMon(id: 500, name: 'Emboar', types: ['fire', 'fighting'], bst: 528),
+  _SuggestedMon(id: 503, name: 'Samurott', types: ['water'], bst: 528),
+  _SuggestedMon(id: 530, name: 'Excadrill', types: ['ground', 'steel'], bst: 508),
+  _SuggestedMon(id: 553, name: 'Krookodile', types: ['ground', 'dark'], bst: 519),
+  _SuggestedMon(id: 591, name: 'Amoonguss', types: ['grass', 'poison'], bst: 464),
+  _SuggestedMon(id: 609, name: 'Chandelure', types: ['ghost', 'fire'], bst: 520),
+  _SuggestedMon(id: 621, name: 'Druddigon', types: ['dragon'], bst: 485),
+  _SuggestedMon(id: 635, name: 'Hydreigon', types: ['dark', 'dragon'], bst: 600),
+  _SuggestedMon(id: 658, name: 'Greninja', types: ['water', 'dark'], bst: 530),
+  _SuggestedMon(id: 663, name: 'Talonflame', types: ['fire', 'flying'], bst: 499),
+  _SuggestedMon(id: 681, name: 'Aegislash', types: ['steel', 'ghost'], bst: 500),
+  _SuggestedMon(id: 691, name: 'Dragalge', types: ['poison', 'dragon'], bst: 494),
+  _SuggestedMon(id: 700, name: 'Sylveon', types: ['fairy'], bst: 525),
+  _SuggestedMon(id: 706, name: 'Goodra', types: ['dragon'], bst: 600),
+  _SuggestedMon(id: 715, name: 'Noivern', types: ['flying', 'dragon'], bst: 535),
+  _SuggestedMon(id: 727, name: 'Incineroar', types: ['fire', 'dark'], bst: 530),
+  _SuggestedMon(id: 730, name: 'Primarina', types: ['water', 'fairy'], bst: 530),
+  _SuggestedMon(id: 738, name: 'Vikavolt', types: ['bug', 'electric'], bst: 500),
+  _SuggestedMon(id: 745, name: 'Lycanroc', types: ['rock'], bst: 487),
+  _SuggestedMon(id: 758, name: 'Salazzle', types: ['poison', 'fire'], bst: 480),
+  _SuggestedMon(id: 778, name: 'Mimikyu', types: ['ghost', 'fairy'], bst: 476),
+  _SuggestedMon(id: 784, name: 'Kommo-o', types: ['dragon', 'fighting'], bst: 600),
+  _SuggestedMon(id: 797, name: 'Celesteela', types: ['steel', 'flying'], bst: 570),
+  _SuggestedMon(id: 812, name: 'Rillaboom', types: ['grass'], bst: 530),
+  _SuggestedMon(id: 815, name: 'Cinderace', types: ['fire'], bst: 530),
+  _SuggestedMon(id: 818, name: 'Inteleon', types: ['water'], bst: 530),
+  _SuggestedMon(id: 823, name: 'Corviknight', types: ['flying', 'steel'], bst: 495),
+  _SuggestedMon(id: 836, name: 'Boltund', types: ['electric'], bst: 490),
+  _SuggestedMon(id: 839, name: 'Coalossal', types: ['rock', 'fire'], bst: 510),
+  _SuggestedMon(id: 842, name: 'Appletun', types: ['grass', 'dragon'], bst: 485),
+  _SuggestedMon(id: 851, name: 'Centiskorch', types: ['fire', 'bug'], bst: 525),
+  _SuggestedMon(id: 884, name: 'Duraludon', types: ['steel', 'dragon'], bst: 535),
+  _SuggestedMon(id: 887, name: 'Dragapult', types: ['dragon', 'ghost'], bst: 600),
+];
+
 class TeamScreen extends StatefulWidget {
   const TeamScreen({super.key});
 
@@ -216,6 +283,88 @@ class _TeamScreenState extends State<TeamScreen> {
     );
   }
 
+  List<_Suggestion> _getSuggestions(
+    List<String> offensiveGaps,
+    Map<String, int> weaknesses,
+    List<int> currentTeamIds,
+  ) {
+    final suggestions = <_Suggestion>[];
+
+    // Get critical weaknesses (3+ team members weak to it)
+    final criticalWeaknesses = weaknesses.entries
+        .where((e) => e.value >= 3)
+        .map((e) => e.key)
+        .toList();
+
+    for (final mon in _competitivePokemon) {
+      // Skip if already on team
+      if (currentTeamIds.contains(mon.id)) continue;
+
+      int score = 0;
+      final reasons = <String>[];
+
+      // Check offensive coverage (can this mon hit our gaps?)
+      int gapsCovered = 0;
+      for (final gap in offensiveGaps.take(5)) {
+        for (final type in mon.types) {
+          if (TypeChart.getEffectiveness(type, gap) >= 2.0) {
+            gapsCovered++;
+            break;
+          }
+        }
+      }
+      if (gapsCovered > 0) {
+        score += gapsCovered * 10;
+        reasons.add('Covers $gapsCovered offensive gap${gapsCovered > 1 ? 's' : ''}');
+      }
+
+      // Check defensive value (does it resist critical weaknesses?)
+      int resists = 0;
+      for (final weakness in criticalWeaknesses) {
+        double effectiveness = 1.0;
+        for (final type in mon.types) {
+          effectiveness *= TypeChart.getEffectiveness(weakness, type);
+        }
+        if (effectiveness <= 0.5) {
+          resists++;
+        }
+      }
+      if (resists > 0) {
+        score += resists * 15;
+        reasons.add('Resists ${resists} critical weakness${resists > 1 ? 'es' : ''}');
+      }
+
+      // Type diversity bonus (adds new type to team)
+      final Set<String> teamTypes = {};
+      for (final id in currentTeamIds) {
+        final d = _details[id];
+        if (d != null) {
+          teamTypes.addAll(d.types.map((t) => t.name));
+        }
+      }
+      int newTypes = 0;
+      for (final type in mon.types) {
+        if (!teamTypes.contains(type)) newTypes++;
+      }
+      if (newTypes > 0) {
+        score += newTypes * 5;
+        if (newTypes == mon.types.length) {
+          reasons.add('Adds unique type coverage');
+        }
+      }
+
+      // BST bonus (stronger is better)
+      if (mon.bst >= 600) score += 5;
+
+      if (score > 0 && reasons.isNotEmpty) {
+        suggestions.add(_Suggestion(pokemon: mon, reasons: reasons, score: score));
+      }
+    }
+
+    suggestions.sort((a, b) => b.score.compareTo(a.score));
+    return suggestions.take(5).toList();
+  }
+
   Widget _buildTeamSummary(List<int> teamIds, ThemeData theme, bool isDark) {
     final Set<String> allTypes = {};
     final Map<String, int> weaknesses = {};
@@ -302,6 +451,11 @@ class _TeamScreenState extends State<TeamScreen> {
     }
     final avgBst = teamIds.isNotEmpty ? totalBst ~/ teamIds.length : 0;
 
+    // Generate suggestions if team is incomplete
+    final suggestions = teamIds.length < 6
+        ? _getSuggestions(offensiveGaps, weaknesses, teamIds)
+        : <_Suggestion>[];
+
     return Column(
       children: [
         // Warnings
@@ -338,6 +492,128 @@ class _TeamScreenState extends State<TeamScreen> {
             ),
           ),
         if (warnings.isNotEmpty) const SizedBox(height: 12),
+
+        // Suggestions
+        if (suggestions.isNotEmpty) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, color: Colors.amber, size: 22),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Suggested Teammates',
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pokemon that would strengthen your team:',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...suggestions.map((s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () => context.go('/pokemon/${s.pokemon.id}'),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(isDark ? 0.08 : 0.04),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withOpacity(0.15),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: TypeColors.getColor(s.pokemon.types.first)
+                                    .withOpacity(isDark ? 0.15 : 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Image.network(
+                                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.pokemon.id}.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        s.pokemon.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ...s.pokemon.types.map((t) => Padding(
+                                        padding: const EdgeInsets.only(right: 4),
+                                        child: TypeBadge(type: t, fontSize: 9),
+                                      )),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ...s.reasons.map((r) => Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.check_circle,
+                                            size: 12,
+                                            color: Colors.green.withOpacity(0.7)),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            r,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: theme.colorScheme.onSurface
+                                                  .withOpacity(0.6),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: theme.colorScheme.onSurface.withOpacity(0.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
 
         // Main analysis
         Card(
@@ -636,4 +912,26 @@ class _StatSummaryTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SuggestedMon {
+  final int id;
+  final String name;
+  final List<String> types;
+  final int bst;
+
+  const _SuggestedMon({
+    required this.id,
+    required this.name,
+    required this.types,
+    required this.bst,
+  });
+}
+
+class _Suggestion {
+  final _SuggestedMon pokemon;
+  final List<String> reasons;
+  final int score;
+
+  _Suggestion({required this.pokemon, required this.reasons, required this.score});
 }
