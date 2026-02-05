@@ -23,15 +23,14 @@ class _HomeScreenState extends State<HomeScreen> {
   int _total = 0;
   static const int _pageSize = 50;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   // Filter state — all synced from URL
   int _selectedGen = 0;
   Set<String> _filterTypes = {};
-  String? _filterMove;
-  String? _filterMoveDisplay;
-  Set<int>? _moveFilterIds;
-  bool _loadingMoveFilter = false;
   String _sortBy = 'number'; // number, name, bst
+  String _searchQuery = '';
 
   // UI state
   bool _filtersExpanded = false;
@@ -53,6 +52,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
   }
 
   @override
@@ -63,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final typesParam = typeParam != null
         ? typeParam.split(',').where((t) => t.isNotEmpty).toSet()
         : <String>{};
-    final moveParam = uri.queryParameters['move'];
     final genRaw = int.tryParse(uri.queryParameters['gen'] ?? '') ?? 0;
     final genParam = _genRanges.containsKey(genRaw) ? genRaw : 0;
     final sortParam = uri.queryParameters['sort'] ?? 'number';
@@ -91,17 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _filterTypes = typesParam;
       needsReload = true;
     }
-    if (moveParam != _filterMove) {
-      _filterMove = moveParam;
-      if (moveParam != null) {
-        _loadMoveFilter(moveParam);
-        return;
-      } else {
-        _moveFilterIds = null;
-        _filterMoveDisplay = null;
-        needsReload = true;
-      }
-    }
 
     if (needsReload) {
       _loadInitial();
@@ -113,6 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -121,15 +115,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return a.containsAll(b);
   }
 
-  void _navigate({int? gen, Set<String>? types, String? move, String? sort, bool clearTypes = false, bool clearMove = false}) {
+  void _navigate({int? gen, Set<String>? types, String? sort, bool clearTypes = false}) {
     final g = gen ?? _selectedGen;
     final t = clearTypes ? <String>{} : (types ?? _filterTypes);
-    final m = clearMove ? null : (move ?? _filterMove);
     final s = sort ?? _sortBy;
     final params = <String>[];
     if (g != 0) params.add('gen=$g');
     if (t.isNotEmpty) params.add('type=${t.join(',')}');
-    if (m != null) params.add('move=$m');
     if (s != 'number') params.add('sort=$s');
     context.go(params.isEmpty ? '/' : '/?${params.join('&')}');
   }
@@ -138,7 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
     int count = 0;
     if (_selectedGen != 0) count++;
     count += _filterTypes.length;
-    if (_filterMove != null) count++;
     return count;
   }
 
@@ -213,9 +204,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_filterTypes.isNotEmpty && types != null && !_filterTypes.every((ft) => types.contains(ft))) {
         continue;
       }
-      if (_moveFilterIds != null && !_moveFilterIds!.contains(id)) {
-        continue;
-      }
 
       final bst = d?.stats.values.fold<int>(0, (sum, v) => sum + v) ?? 0;
       _entries.add(_PokemonEntry(
@@ -243,20 +231,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadMoveFilter(String moveName) async {
-    setState(() => _loadingMoveFilter = true);
-    try {
-      final moveDetail = await PokeApiService.getMoveDetail(moveName);
-      _filterMoveDisplay = moveDetail.displayName;
-      _moveFilterIds = moveDetail.learnedByPokemon.map((p) => p.id).toSet();
-    } catch (_) {
-      _moveFilterIds = {};
-      _filterMoveDisplay = moveName.split('-').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
-    }
-    if (mounted) {
-      setState(() => _loadingMoveFilter = false);
-      _loadInitial();
-    }
+  List<_PokemonEntry> get _filteredEntries {
+    if (_searchQuery.isEmpty) return _entries;
+    return _entries.where((entry) {
+      final name = entry.basic.name.toLowerCase();
+      final id = entry.basic.id.toString();
+      return name.contains(_searchQuery) || id.contains(_searchQuery);
+    }).toList();
   }
 
   @override
@@ -359,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ),
-                                  if (_entries.isNotEmpty && !_loading)
+                                  if (_filteredEntries.isNotEmpty && !_loading)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
@@ -367,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Text(
-                                        '${_entries.length}',
+                                        '${_filteredEntries.length}',
                                         style: TextStyle(
                                           color: colorScheme.primary,
                                           fontWeight: FontWeight.w700,
@@ -377,8 +358,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                 ],
                               ),
+                              const SizedBox(height: 16),
+                              // Search bar
+                              TextField(
+                                controller: _searchController,
+                                focusNode: _searchFocusNode,
+                                decoration: InputDecoration(
+                                  hintText: 'Search by name or number...',
+                                  hintStyle: TextStyle(
+                                    fontSize: 14,
+                                    color: colorScheme.onSurface.withOpacity(0.4),
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.search_rounded,
+                                    color: colorScheme.onSurface.withOpacity(0.4),
+                                    size: 22,
+                                  ),
+                                  suffixIcon: _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(
+                                            Icons.close_rounded,
+                                            color: colorScheme.onSurface.withOpacity(0.4),
+                                          ),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                ),
+                                style: const TextStyle(fontSize: 15),
+                              ),
                               const SizedBox(height: 12),
-                // Filter bar
+                              // Filter bar
                 _FilterBar(
                   activeFilterCount: _activeFilterCount,
                   sortBy: _sortBy,
@@ -401,13 +414,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           _navigate(types: updated);
                         },
                       ),
-                    if (_filterMove != null)
-                      _ActiveFilter(
-                        label: _filterMoveDisplay ?? _filterMove!,
-                        color: colorScheme.tertiary,
-                        icon: Icons.flash_on_rounded,
-                        onRemove: () => _navigate(clearMove: true),
-                      ),
                   ],
                 ),
                 // Expandable filter panel
@@ -420,9 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   secondChild: _FilterPanel(
                     selectedGen: _selectedGen,
                     filterTypes: _filterTypes,
-                    filterMove: _filterMove,
                     sortBy: _sortBy,
-                    loadingMoveFilter: _loadingMoveFilter,
                     onGenSelected: (gen) => _navigate(gen: gen),
                     onTypeToggled: (type) {
                       final updated = Set<String>.from(_filterTypes);
@@ -433,8 +437,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                       _navigate(types: updated);
                     },
-                    onMoveSelected: (move) => _navigate(move: move),
-                    onMoveClear: () => _navigate(clearMove: true),
                     onSortChanged: (sort) => _navigate(sort: sort),
                     onClearAll: () {
                       context.go('/');
@@ -448,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     // Empty state or grid
-                    if (_entries.isEmpty)
+                    if (_filteredEntries.isEmpty)
                       SliverFillRemaining(
                         child: Center(
                           child: Column(
@@ -457,18 +459,27 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icon(Icons.search_off_rounded, size: 48, color: colorScheme.onSurface.withOpacity(0.2)),
                               const SizedBox(height: 12),
                               Text(
-                                'No Pokemon match these filters',
+                                _searchQuery.isNotEmpty
+                                    ? 'No Pokemon match "$_searchQuery"'
+                                    : 'No Pokemon match these filters',
                                 style: TextStyle(
                                   color: colorScheme.onSurface.withOpacity(0.5),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              TextButton.icon(
-                                onPressed: () => context.go('/'),
-                                icon: const Icon(Icons.clear_all_rounded, size: 18),
-                                label: const Text('Clear filters'),
-                              ),
+                              if (_searchQuery.isNotEmpty)
+                                TextButton.icon(
+                                  onPressed: () => _searchController.clear(),
+                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  label: const Text('Clear search'),
+                                )
+                              else
+                                TextButton.icon(
+                                  onPressed: () => context.go('/'),
+                                  icon: const Icon(Icons.clear_all_rounded, size: 18),
+                                  label: const Text('Clear filters'),
+                                ),
                             ],
                           ),
                         ),
@@ -485,14 +496,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   delegate: SliverChildBuilderDelegate(
                                     (context, index) {
-                                      final entry = _entries[index];
+                                      final entry = _filteredEntries[index];
                                       return PokemonCard(
                                         pokemon: entry.basic,
                                         types: entry.types,
                                         onTap: () => context.go('/pokemon/${entry.basic.id}'),
                                       );
                                     },
-                                    childCount: _entries.length,
+                                    childCount: _filteredEntries.length,
                                   ),
                                 ),
                               ),
@@ -521,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ],
                                           ),
                                         )
-                                      : _offset >= _total && _entries.isNotEmpty
+                                      : _offset >= _total && _filteredEntries.isNotEmpty
                                           ? Center(
                                               child: Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -530,7 +541,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   borderRadius: BorderRadius.circular(20),
                                                 ),
                                                 child: Text(
-                                                  'All ${_entries.length} Pokemon loaded',
+                                                  _searchQuery.isNotEmpty
+                                                      ? '${_filteredEntries.length} results'
+                                                      : 'All ${_filteredEntries.length} Pokemon loaded',
                                                   style: TextStyle(
                                                     color: colorScheme.onSurface.withOpacity(0.4),
                                                     fontWeight: FontWeight.w500,
@@ -753,26 +766,18 @@ class _FilterBar extends StatelessWidget {
 class _FilterPanel extends StatelessWidget {
   final int selectedGen;
   final Set<String> filterTypes;
-  final String? filterMove;
   final String sortBy;
-  final bool loadingMoveFilter;
   final ValueChanged<int> onGenSelected;
   final ValueChanged<String> onTypeToggled;
-  final ValueChanged<String> onMoveSelected;
-  final VoidCallback onMoveClear;
   final ValueChanged<String> onSortChanged;
   final VoidCallback onClearAll;
 
   const _FilterPanel({
     required this.selectedGen,
     required this.filterTypes,
-    required this.filterMove,
     required this.sortBy,
-    required this.loadingMoveFilter,
     required this.onGenSelected,
     required this.onTypeToggled,
-    required this.onMoveSelected,
-    required this.onMoveClear,
     required this.onSortChanged,
     required this.onClearAll,
   });
@@ -807,7 +812,7 @@ class _FilterPanel extends StatelessWidget {
               const SizedBox(width: 6),
               _SortChip(label: 'BST', value: 'bst', current: sortBy, onTap: () => onSortChanged('bst')),
               const Spacer(),
-              if (selectedGen != 0 || filterTypes.isNotEmpty || filterMove != null)
+              if (selectedGen != 0 || filterTypes.isNotEmpty)
                 TextButton.icon(
                   onPressed: onClearAll,
                   icon: Icon(Icons.clear_all_rounded, size: 16, color: colorScheme.error),
@@ -857,62 +862,9 @@ class _FilterPanel extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 14),
-          // Move filter
-          Row(
-            children: [
-              _SectionLabel(label: 'Learns move'),
-              if (loadingMoveFilter) ...[
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 14, height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colorScheme.primary,
-                  ),
-                ),
-              ],
-              if (filterMove != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: colorScheme.tertiary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.flash_on_rounded, size: 12, color: colorScheme.tertiary),
-                      const SizedBox(width: 3),
-                      Text(
-                        _filterMoveDisplayName ?? filterMove!,
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: colorScheme.tertiary),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: onMoveClear,
-                        child: Icon(Icons.close, size: 12, color: colorScheme.tertiary),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          _MoveFilterSearch(
-            currentMove: filterMove,
-            onMoveSelected: onMoveSelected,
-          ),
         ],
       ),
     );
-  }
-
-  String? get _filterMoveDisplayName {
-    if (filterMove == null) return null;
-    return filterMove!.split('-').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
   }
 }
 
@@ -1083,168 +1035,6 @@ class _TypeChip extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// --- Move search (reused from before, cleaned up) ---
-
-class _MoveFilterSearch extends StatefulWidget {
-  final String? currentMove;
-  final ValueChanged<String> onMoveSelected;
-
-  const _MoveFilterSearch({this.currentMove, required this.onMoveSelected});
-
-  @override
-  State<_MoveFilterSearch> createState() => _MoveFilterSearchState();
-}
-
-class _MoveFilterSearchState extends State<_MoveFilterSearch> {
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
-  List<MoveDetail>? _suggestions;
-  bool _showDropdown = false;
-
-  static List<MoveDetail>? _allMoves;
-  static bool _loadingAllMoves = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (mounted) setState(() => _showDropdown = false);
-        });
-      }
-    });
-    _ensureMovesLoaded();
-  }
-
-  Future<void> _ensureMovesLoaded() async {
-    if (_allMoves != null || _loadingAllMoves) return;
-    _loadingAllMoves = true;
-    try {
-      final futures = <Future<MoveDetail>>[];
-      for (int i = 1; i <= 165; i++) {
-        futures.add(PokeApiService.getMoveDetail(i.toString()));
-      }
-      final results = await Future.wait(futures.map((f) => f.catchError((_) => MoveDetail(id: 0, name: ''))));
-      _allMoves = results.where((m) => m.id > 0).toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
-    } catch (_) {
-      _allMoves = [];
-    }
-    _loadingAllMoves = false;
-  }
-
-  void _onSearch(String query) {
-    if (query.length < 2 || _allMoves == null) {
-      setState(() { _suggestions = null; _showDropdown = false; });
-      return;
-    }
-    final q = query.toLowerCase();
-    final matches = _allMoves!.where((m) =>
-      m.name.contains(q) || m.displayName.toLowerCase().contains(q)
-    ).take(8).toList();
-    setState(() { _suggestions = matches; _showDropdown = matches.isNotEmpty; });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return SizedBox(
-      height: 38,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          TextField(
-            controller: _controller,
-            focusNode: _focusNode,
-            style: const TextStyle(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Search moves...',
-              hintStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.3)),
-              prefixIcon: const Icon(Icons.search, size: 18),
-              prefixIconConstraints: const BoxConstraints(minWidth: 36),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5)),
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
-            ),
-            onChanged: _onSearch,
-          ),
-          if (_showDropdown && _suggestions != null && _suggestions!.isNotEmpty)
-            Positioned(
-              top: 42,
-              left: 0,
-              right: 0,
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 240),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E1E2A) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200),
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: _suggestions!.length,
-                    itemBuilder: (_, i) {
-                      final move = _suggestions![i];
-                      return ListTile(
-                        dense: true,
-                        visualDensity: VisualDensity.compact,
-                        leading: move.type != null
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: TypeColors.getColor(move.type!),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  move.type!.substring(0, 3).toUpperCase(),
-                                  style: TextStyle(color: TypeColors.getTextColor(move.type!), fontSize: 9, fontWeight: FontWeight.w800),
-                                ),
-                              )
-                            : null,
-                        title: Text(move.displayName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                          [
-                            if (move.power != null) 'Pow: ${move.power}',
-                            if (move.damageClass != null) move.damageClass!,
-                          ].join(' · '),
-                          style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4)),
-                        ),
-                        onTap: () {
-                          _controller.clear();
-                          setState(() { _suggestions = null; _showDropdown = false; });
-                          _focusNode.unfocus();
-                          widget.onMoveSelected(move.name);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
