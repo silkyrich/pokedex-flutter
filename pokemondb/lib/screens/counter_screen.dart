@@ -293,11 +293,11 @@ class _CounterScreenState extends State<CounterScreen> {
               ],
             ),
           ),
-          // Quick action to battle
+          // Quick action to compare
           FilledButton.icon(
             onPressed: () => context.go('/battle/${p.id}/25'),
             icon: const Icon(Icons.compare_arrows, size: 16),
-            label: const Text('Battle'),
+            label: const Text('Compare'),
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
           ),
         ],

@@ -89,7 +89,7 @@ def draw_card(c: canvas.Canvas, x: float, y: float, w: float, h: float, qr_img):
     c.setFillColor(LIGHT_TEXT)
     line1_y = tag_y - 10
     c.drawCentredString(x + w / 2, line1_y, "Stats \u2022 Moves \u2022 Type Matchups \u2022 Quiz")
-    c.drawCentredString(x + w / 2, line1_y - 9, "Battle Simulator \u2022 Team Builder \u2022 1025 Pokemon")
+    c.drawCentredString(x + w / 2, line1_y - 9, "Head to Head \u2022 Team Builder \u2022 1025 Pokemon")
 
     # --- QR Code ---
     qr_size = min(w * 0.52, h * 0.38)
