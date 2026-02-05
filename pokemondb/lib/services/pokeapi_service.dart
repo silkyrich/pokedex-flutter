@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/pokemon.dart';
 import '../models/move.dart';
+import '../models/ability.dart';
+import '../models/breeding.dart';
+import '../models/item.dart';
 
 class PokeApiService {
   static const String _baseUrl = 'https://pokeapi.co/api/v2';
@@ -110,14 +113,46 @@ class PokeApiService {
     final id = int.parse(segments.last);
     final name = chain['species']['name'] as String;
 
+    // Extract evolution details (Phase 2: extended fields)
     String? trigger;
     int? minLevel;
     String? item;
+    String? heldItem;
+    String? knownMove;
+    String? knownMoveType;
+    String? location;
+    int? minHappiness;
+    int? minBeauty;
+    int? minAffection;
+    String? timeOfDay;
+    String? partySpecies;
+    int? relativePhysicalStats;
+    String? tradeSpecies;
+    int? gender;
+    bool needsOverworldRain = false;
+    bool turnUpsideDown = false;
+
     final details = chain['evolution_details'] as List;
     if (details.isNotEmpty) {
-      trigger = details[0]['trigger']?['name'];
-      minLevel = details[0]['min_level'];
-      item = details[0]['item']?['name'];
+      final detail = details[0];
+      trigger = detail['trigger']?['name'];
+      minLevel = detail['min_level'];
+      item = detail['item']?['name'];
+      heldItem = detail['held_item']?['name'];
+      knownMove = detail['known_move']?['name'];
+      knownMoveType = detail['known_move_type']?['name'];
+      location = detail['location']?['name'];
+      minHappiness = detail['min_happiness'];
+      minBeauty = detail['min_beauty'];
+      minAffection = detail['min_affection'];
+      timeOfDay = detail['time_of_day'] as String?;
+      if (timeOfDay != null && timeOfDay.isEmpty) timeOfDay = null;
+      partySpecies = detail['party_species']?['name'];
+      relativePhysicalStats = detail['relative_physical_stats'];
+      tradeSpecies = detail['trade_species']?['name'];
+      gender = detail['gender'];
+      needsOverworldRain = detail['needs_overworld_rain'] as bool? ?? false;
+      turnUpsideDown = detail['turn_upside_down'] as bool? ?? false;
     }
 
     final children = <EvolutionInfo>[];
@@ -131,6 +166,20 @@ class PokeApiService {
       trigger: trigger,
       minLevel: minLevel,
       item: item,
+      heldItem: heldItem,
+      knownMove: knownMove,
+      knownMoveType: knownMoveType,
+      location: location,
+      minHappiness: minHappiness,
+      minBeauty: minBeauty,
+      minAffection: minAffection,
+      timeOfDay: timeOfDay,
+      partySpecies: partySpecies,
+      relativePhysicalStats: relativePhysicalStats,
+      tradeSpecies: tradeSpecies,
+      gender: gender,
+      needsOverworldRain: needsOverworldRain,
+      turnUpsideDown: turnUpsideDown,
       evolvesTo: children,
     );
   }
@@ -192,6 +241,93 @@ class PokeApiService {
     final data = await _getJson('$_baseUrl/pokemon?limit=1025');
     return (data['results'] as List)
         .map((p) => PokemonBasic.fromJson(p))
+        .toList();
+  }
+
+  // Phase 1: Ability endpoints
+  static Future<AbilityDetail> getAbilityDetail(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/ability/${nameOrId.toLowerCase()}');
+    return AbilityDetail.fromJson(data);
+  }
+
+  static Future<List<AbilityDetail>> getAbilityDetailsBatch(
+    List<String> names, {
+    void Function(int loaded, int total)? onProgress,
+  }) async {
+    final results = <AbilityDetail>[];
+    int loaded = 0;
+
+    for (int i = 0; i < names.length; i += _batchSize) {
+      final batchEnd = (i + _batchSize).clamp(0, names.length);
+      final batchNames = names.sublist(i, batchEnd);
+
+      final futures = batchNames.map((name) async {
+        try {
+          return await getAbilityDetail(name);
+        } catch (_) {
+          return null;
+        }
+      }).toList();
+
+      final batchResults = await Future.wait(futures);
+      for (final r in batchResults) {
+        if (r != null) results.add(r);
+      }
+
+      loaded += batchResults.length;
+      onProgress?.call(loaded, names.length);
+    }
+
+    return results;
+  }
+
+  static Future<EggGroupDetail> getEggGroup(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/egg-group/${nameOrId.toLowerCase()}');
+    return EggGroupDetail.fromJson(data);
+  }
+
+  // Phase 2: Item endpoints
+  static Future<List<ItemBasic>> getItemsList({
+    int offset = 0,
+    int limit = 100,
+  }) async {
+    final data = await _getJson(
+      '$_baseUrl/item?offset=$offset&limit=$limit',
+    );
+    return (data['results'] as List)
+        .map((i) => ItemBasic.fromJson(i))
+        .toList();
+  }
+
+  static Future<ItemDetail> getItemDetail(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/item/${nameOrId.toLowerCase()}');
+    return ItemDetail.fromJson(data);
+  }
+
+  static Future<BerryDetail> getBerryDetail(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/berry/${nameOrId.toLowerCase()}');
+    return BerryDetail.fromJson(data);
+  }
+
+  /// Search items by name.
+  static Future<List<ItemBasic>> searchItems(String query) async {
+    final data = await _getJson('$_baseUrl/item?limit=2000');
+    final all = (data['results'] as List)
+        .map((i) => ItemBasic.fromJson(i))
+        .toList();
+    final q = query.toLowerCase();
+    return all
+        .where((i) =>
+            i.name.contains(q) ||
+            i.displayName.toLowerCase().contains(q))
+        .toList();
+  }
+
+  /// Pre-warm the full items list cache.
+  static Future<List<ItemBasic>> getAllItemsBasic() async {
+    final data = await _getJson('$_baseUrl/item?limit=2000');
+    return (data['results'] as List)
+        .map((i) => ItemBasic.fromJson(i))
         .toList();
   }
 }

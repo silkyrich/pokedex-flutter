@@ -25,7 +25,7 @@ class _TeamCoverageScreenState extends State<TeamCoverageScreen> {
 
   Future<void> _loadTeam() async {
     setState(() => _loading = true);
-    final teamIds = AppState().teamMemberIds;
+    final teamIds = AppState().team;
 
     if (teamIds.isEmpty) {
       setState(() => _loading = false);
@@ -38,7 +38,7 @@ class _TeamCoverageScreenState extends State<TeamCoverageScreen> {
       );
       if (mounted) {
         setState(() {
-          _teamPokemon = details;
+          _teamPokemon = details.cast<PokemonDetail>();
           _loading = false;
         });
       }
@@ -390,7 +390,7 @@ class _TeamMemberChip extends StatelessWidget {
                 children: pokemon.types.map((t) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 4),
-                    child: TypeBadge(type: t.name, small: true),
+                    child: TypeBadge(type: t.name, fontSize: 10),
                   );
                 }).toList(),
               ),

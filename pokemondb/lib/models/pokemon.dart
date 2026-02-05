@@ -235,6 +235,19 @@ class PokemonSpecies {
   final List<EvolutionInfo> evolutionChain;
   final int? evolutionChainId;
   final List<FormVariety> varieties;
+  // Phase 1: Extended species data
+  final int? captureRate;
+  final int? baseHappiness;
+  final int? genderRate; // -1 = genderless, 0 = always male, 8 = always female, 1-7 = ratio
+  final int? hatchCounter;
+  final List<String> eggGroups;
+  final String? habitat;
+  final String? shape;
+  final String? color;
+  final bool isBaby;
+  final bool isLegendary;
+  final bool isMythical;
+  final int generation;
 
   PokemonSpecies({
     required this.id,
@@ -244,6 +257,18 @@ class PokemonSpecies {
     this.evolutionChain = const [],
     this.evolutionChainId,
     this.varieties = const [],
+    this.captureRate,
+    this.baseHappiness,
+    this.genderRate,
+    this.hatchCounter,
+    this.eggGroups = const [],
+    this.habitat,
+    this.shape,
+    this.color,
+    this.isBaby = false,
+    this.isLegendary = false,
+    this.isMythical = false,
+    this.generation = 1,
   });
 
   factory PokemonSpecies.fromJson(Map<String, dynamic> json) {
@@ -285,6 +310,21 @@ class PokemonSpecies {
       ));
     }
 
+    // Parse egg groups
+    final eggGroupsList = <String>[];
+    for (final eg in json['egg_groups'] as List? ?? []) {
+      eggGroupsList.add(eg['name'] as String);
+    }
+
+    // Parse generation (e.g., "generation-i" -> 1)
+    int generation = 1;
+    final genName = json['generation']?['name'] as String?;
+    if (genName != null) {
+      final romanNumerals = {'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5, 'vi': 6, 'vii': 7, 'viii': 8, 'ix': 9};
+      final genPart = genName.split('-').last.toLowerCase();
+      generation = romanNumerals[genPart] ?? 1;
+    }
+
     return PokemonSpecies(
       id: json['id'],
       name: json['name'],
@@ -292,6 +332,18 @@ class PokemonSpecies {
       flavorText: flavorText,
       evolutionChainId: chainId,
       varieties: varieties,
+      captureRate: json['capture_rate'] as int?,
+      baseHappiness: json['base_happiness'] as int?,
+      genderRate: json['gender_rate'] as int?,
+      hatchCounter: json['hatch_counter'] as int?,
+      eggGroups: eggGroupsList,
+      habitat: json['habitat']?['name'] as String?,
+      shape: json['shape']?['name'] as String?,
+      color: json['color']?['name'] as String?,
+      isBaby: json['is_baby'] as bool? ?? false,
+      isLegendary: json['is_legendary'] as bool? ?? false,
+      isMythical: json['is_mythical'] as bool? ?? false,
+      generation: generation,
     );
   }
 }
@@ -302,6 +354,21 @@ class EvolutionInfo {
   final String? trigger;
   final int? minLevel;
   final String? item;
+  // Phase 2: Extended evolution conditions
+  final String? heldItem;
+  final String? knownMove;
+  final String? knownMoveType;
+  final String? location;
+  final int? minHappiness;
+  final int? minBeauty;
+  final int? minAffection;
+  final String? timeOfDay;
+  final String? partySpecies;
+  final int? relativePhysicalStats; // 1 = Atk > Def, -1 = Atk < Def, 0 = Atk == Def
+  final String? tradeSpecies;
+  final int? gender; // 1 = female, 2 = male
+  final bool needsOverworldRain;
+  final bool turnUpsideDown;
   final List<EvolutionInfo> evolvesTo;
 
   EvolutionInfo({
@@ -310,16 +377,113 @@ class EvolutionInfo {
     this.trigger,
     this.minLevel,
     this.item,
+    this.heldItem,
+    this.knownMove,
+    this.knownMoveType,
+    this.location,
+    this.minHappiness,
+    this.minBeauty,
+    this.minAffection,
+    this.timeOfDay,
+    this.partySpecies,
+    this.relativePhysicalStats,
+    this.tradeSpecies,
+    this.gender,
+    this.needsOverworldRain = false,
+    this.turnUpsideDown = false,
     this.evolvesTo = const [],
   });
 
   String get displayTrigger {
-    if (minLevel != null) return 'Lv. $minLevel';
-    if (item != null) {
-      return item!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
+    final parts = <String>[];
+
+    // Level requirement
+    if (minLevel != null) {
+      parts.add('Lv. $minLevel');
     }
-    if (trigger == 'trade') return 'Trade';
-    return '';
+
+    // Item (evolution stone, etc.)
+    if (item != null) {
+      parts.add(item!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '));
+    }
+
+    // Trade
+    if (trigger == 'trade') {
+      if (tradeSpecies != null) {
+        parts.add('Trade for ${tradeSpecies!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')}');
+      } else if (heldItem != null) {
+        parts.add('Trade holding ${heldItem!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')}');
+      } else {
+        parts.add('Trade');
+      }
+    }
+
+    // Friendship/Happiness
+    if (minHappiness != null) {
+      parts.add('Friendship ≥ $minHappiness');
+    }
+
+    // Affection
+    if (minAffection != null) {
+      parts.add('Affection ≥ $minAffection');
+    }
+
+    // Beauty
+    if (minBeauty != null) {
+      parts.add('Beauty ≥ $minBeauty');
+    }
+
+    // Time of day
+    if (timeOfDay != null && timeOfDay!.isNotEmpty) {
+      parts.add(timeOfDay![0].toUpperCase() + timeOfDay!.substring(1));
+    }
+
+    // Known move
+    if (knownMove != null) {
+      parts.add('Knows ${knownMove!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')}');
+    }
+
+    // Known move type
+    if (knownMoveType != null) {
+      parts.add('Knows ${knownMoveType![0].toUpperCase() + knownMoveType!.substring(1)}-type move');
+    }
+
+    // Location
+    if (location != null) {
+      parts.add('at ${location!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')}');
+    }
+
+    // Party species
+    if (partySpecies != null) {
+      parts.add('with ${partySpecies!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')} in party');
+    }
+
+    // Relative stats (Hitmonlee/Hitmonchan/Hitmontop)
+    if (relativePhysicalStats != null) {
+      if (relativePhysicalStats! > 0) {
+        parts.add('Attack > Defense');
+      } else if (relativePhysicalStats! < 0) {
+        parts.add('Attack < Defense');
+      } else {
+        parts.add('Attack = Defense');
+      }
+    }
+
+    // Gender
+    if (gender != null) {
+      parts.add(gender == 1 ? 'Female' : 'Male');
+    }
+
+    // Special conditions
+    if (needsOverworldRain) {
+      parts.add('During rain');
+    }
+
+    if (turnUpsideDown) {
+      parts.add('Turn console upside down');
+    }
+
+    return parts.isEmpty ? '' : parts.join(' + ');
   }
 
   String get displayName => name[0].toUpperCase() + name.substring(1);

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/pokemon.dart';
+import '../models/ability.dart';
 import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../widgets/type_badge.dart';
@@ -306,6 +307,19 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                     const SizedBox(height: 16),
                     _buildStatsSection(p, theme, isDark),
                     const SizedBox(height: 20),
+                    // Phase 1: Extended Pokedex Data
+                    if (_species != null) ...[
+                      _buildExtendedDataSection(_species!, theme),
+                      const SizedBox(height: 20),
+                    ],
+                    // Phase 1: Enhanced Abilities
+                    _buildAbilitiesSection(p, theme),
+                    const SizedBox(height: 20),
+                    // Phase 1: Breeding Info
+                    if (_species != null) ...[
+                      _buildBreedingSection(_species!, theme),
+                      const SizedBox(height: 20),
+                    ],
                     if (_evoRoot != null && _evoRoot!.flatten().length > 1) ...[
                       _buildEvolutionSection(theme, isDark),
                       const SizedBox(height: 20),
@@ -606,8 +620,8 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           color: const Color(0xFFF59E0B),
           isDark: isDark,
           onTap: () async {
-            final name = p.displayName.split('(')[0].trim().replaceAll(' ', '_');
-            final url = Uri.parse('https://bulbapedia.bulbagarden.net/wiki/$name_(Pokémon)');
+            final pokemonName = p.displayName.split('(')[0].trim().replaceAll(' ', '_');
+            final url = Uri.parse('https://bulbapedia.bulbagarden.net/wiki/${pokemonName}_(Pokémon)');
             if (await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.externalApplication);
             }
@@ -896,6 +910,86 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
       ),
     );
   }
+
+  // Phase 1: Extended Pokedex Data Section
+  Widget _buildExtendedDataSection(PokemonSpecies species, ThemeData theme) {
+    return _sectionCard('Pokédex Data', theme, Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _infoRow('Generation', _romanNumeral(species.generation), theme),
+        if (species.habitat != null)
+          _infoRow('Habitat', species.habitat!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '), theme),
+        if (species.color != null)
+          _infoRow('Color', species.color![0].toUpperCase() + species.color!.substring(1), theme),
+        if (species.shape != null)
+          _infoRow('Shape', species.shape!.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '), theme),
+        if (species.captureRate != null)
+          _infoRow('Capture Rate', '${species.captureRate}', theme),
+        // Badges
+        if (species.isLegendary || species.isMythical || species.isBaby) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (species.isLegendary) _Badge('Legendary', Colors.amber),
+              if (species.isMythical) _Badge('Mythical', Colors.purple),
+              if (species.isBaby) _Badge('Baby Pokémon', Colors.pink),
+            ],
+          ),
+        ],
+      ],
+    ));
+  }
+
+  String _romanNumeral(int gen) {
+    const numerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+    return gen > 0 && gen <= numerals.length ? numerals[gen - 1] : '$gen';
+  }
+
+  // Phase 1: Enhanced Abilities Section
+  Widget _buildAbilitiesSection(PokemonDetail p, ThemeData theme) {
+    return _sectionCard('Abilities', theme, Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: p.abilities.map((ability) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _AbilityCard(
+            abilityName: ability.name,
+            isHidden: ability.isHidden,
+            theme: theme,
+          ),
+        );
+      }).toList(),
+    ));
+  }
+
+  // Phase 1: Breeding Info Section
+  Widget _buildBreedingSection(PokemonSpecies species, ThemeData theme) {
+    return _sectionCard('Breeding', theme, Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _infoRow('Egg Groups', species.eggGroups.isEmpty
+            ? 'Undiscovered'
+            : species.eggGroups.map((e) => e.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')).join(', '), theme),
+        if (species.genderRate != null)
+          _infoRow('Gender Ratio', _formatGenderRatio(species.genderRate!), theme),
+        if (species.hatchCounter != null)
+          _infoRow('Hatch Time', '${(species.hatchCounter! + 1) * 255} steps', theme),
+        if (species.baseHappiness != null)
+          _infoRow('Base Happiness', '${species.baseHappiness}', theme),
+      ],
+    ));
+  }
+
+  String _formatGenderRatio(int genderRate) {
+    if (genderRate == -1) return 'Genderless';
+    if (genderRate == 0) return '100% Male';
+    if (genderRate == 8) return '100% Female';
+    final femalePercent = (genderRate / 8 * 100).toStringAsFixed(1);
+    final malePercent = ((8 - genderRate) / 8 * 100).toStringAsFixed(1);
+    return '$malePercent% Male / $femalePercent% Female';
+  }
 }
 
 class _NavChip extends StatelessWidget {
@@ -1091,6 +1185,176 @@ class _QuickActionButtonState extends State<_QuickActionButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _Badge(this.label, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _AbilityCard extends StatefulWidget {
+  final String abilityName;
+  final bool isHidden;
+  final ThemeData theme;
+
+  const _AbilityCard({
+    required this.abilityName,
+    required this.isHidden,
+    required this.theme,
+  });
+
+  @override
+  State<_AbilityCard> createState() => _AbilityCardState();
+}
+
+class _AbilityCardState extends State<_AbilityCard> {
+  bool _expanded = false;
+  AbilityDetail? _abilityDetail;
+  bool _loading = false;
+
+  Future<void> _loadAbilityDetail() async {
+    if (_abilityDetail != null) return;
+    setState(() => _loading = true);
+    try {
+      final detail = await PokeApiService.getAbilityDetail(widget.abilityName);
+      if (mounted) {
+        setState(() {
+          _abilityDetail = detail;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName = widget.abilityName
+        .split('-')
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() => _expanded = !_expanded);
+            if (_expanded && _abilityDetail == null) {
+              _loadAbilityDetail();
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  color: widget.theme.colorScheme.onSurface.withOpacity(0.5),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: widget.theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (widget.isHidden)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: widget.theme.colorScheme.secondary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Hidden',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: widget.theme.colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          if (_loading)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: widget.theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            )
+          else if (_abilityDetail != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: widget.theme.colorScheme.surfaceContainerHighest
+                    .withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _abilityDetail!.shortEffect ?? _abilityDetail!.effect ?? 'No description available.',
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: widget.theme.colorScheme.onSurface.withOpacity(0.8),
+                ),
+              ),
+            )
+          else
+            Text(
+              'Failed to load ability details.',
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.theme.colorScheme.error,
+              ),
+            ),
+        ],
+      ],
     );
   }
 }

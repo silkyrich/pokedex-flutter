@@ -23,6 +23,8 @@ import 'screens/quiz_screen.dart';
 import 'screens/learn_screen.dart';
 import 'screens/stats_guide_screen.dart';
 import 'screens/official_links_screen.dart';
+import 'screens/items_screen.dart';
+import 'screens/item_detail_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -97,6 +99,14 @@ final _router = GoRouter(
         GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const FavoritesScreen()),
         GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
+        GoRoute(path: '/items', builder: (context, state) => const ItemsScreen()),
+        GoRoute(
+          path: '/items/:name',
+          builder: (context, state) {
+            final name = state.pathParameters['name']!;
+            return ItemDetailScreen(itemName: name);
+          },
+        ),
         GoRoute(
           path: '/pokemon/:id',
           builder: (context, state) {
