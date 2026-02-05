@@ -3,63 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DexGuide</title>
 
-  <!-- Open Graph defaults — overridden by script below for deep links -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" id="og-title" content="DexGuide — Pokémon Database">
-  <meta property="og:description" id="og-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
-  <meta property="og:image" id="og-image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
-  <meta property="og:url" id="og-url" content="https://dexguide.gg/">
-  <meta property="og:site_name" content="DexGuide">
-
-  <!-- Twitter Card defaults -->
-  <meta name="twitter:card" id="tw-card" content="summary">
-  <meta name="twitter:title" id="tw-title" content="DexGuide — Pokémon Database">
-  <meta name="twitter:description" id="tw-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
-  <meta name="twitter:image" id="tw-image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
-
-  <title>DexGuide — Pokémon Database</title>
+  <!-- OG meta tags for crawlers are handled by Cloudflare Worker (see cloudflare-worker/worker.js) -->
 
   <script>
-    // Set correct OG meta tags for the current deep link path.
-    // 404.html is served at the original URL (e.g. /pokedex-flutter/pokemon/3),
-    // so window.location.pathname is correct here — unlike after a redirect to index.html.
-    (function() {
-      var path = window.location.pathname;
-      var base = 'https://dexguide.gg';
-
-      var pokemonMatch = path.match(/^\/pokemon\/(\d+)$/);
-      if (pokemonMatch) {
-        var id = pokemonMatch[1];
-        var artUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
-        var title = 'Pokémon #' + id + ' — DexGuide';
-        var desc = 'View stats, moves, abilities, evolution chain, and type matchups for Pokémon #' + id + '.';
-        document.getElementById('og-title').content = title;
-        document.getElementById('og-desc').content = desc;
-        document.getElementById('og-image').content = artUrl;
-        document.getElementById('og-url').content = base + '/pokemon/' + id;
-        document.getElementById('tw-card').content = 'summary_large_image';
-        document.getElementById('tw-title').content = title;
-        document.getElementById('tw-desc').content = desc;
-        document.getElementById('tw-image').content = artUrl;
-        document.title = title;
-      }
-
-      var moveMatch = path.match(/^\/moves\/(.+)$/);
-      if (moveMatch) {
-        var name = moveMatch[1].replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        document.getElementById('og-title').content = name + ' — Move — DexGuide';
-        document.getElementById('og-desc').content = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
-        document.getElementById('og-url').content = base + '/moves/' + moveMatch[1];
-        document.getElementById('tw-title').content = name + ' — Move — DexGuide';
-        document.getElementById('tw-desc').content = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
-        document.title = name + ' — Move — DexGuide';
-      }
-
-      // Redirect to SPA — store path so index.html can restore the route
-      sessionStorage.setItem('redirectPath', location.pathname + location.search + location.hash);
-      location.replace(base + '/');
-    })();
+    // GitHub Pages SPA redirect: store the deep link path so index.html
+    // can restore it via history.replaceState after the Flutter app loads.
+    sessionStorage.setItem('redirectPath', location.pathname + location.search + location.hash);
+    location.replace('https://dexguide.gg/');
   </script>
 </head>
 <body></body>

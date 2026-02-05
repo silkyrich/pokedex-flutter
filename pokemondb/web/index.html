@@ -24,61 +24,8 @@
 
   <title>DexGuide — Pokémon Database</title>
 
-  <!-- Set context-sensitive meta tags based on URL path -->
-  <script>
-    (function() {
-      var path = window.location.pathname;
-      var base = 'https://dexguide.gg';
+  <!-- OG meta tags for crawlers are handled by Cloudflare Worker (see cloudflare-worker/worker.js) -->
 
-      // Pokemon detail page: /pokemon/{id}
-      var pokemonMatch = path.match(/^\/pokemon\/(\d+)$/);
-      if (pokemonMatch) {
-        var id = pokemonMatch[1];
-        var artUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
-        var title = 'Pokémon #' + id + ' — DexGuide';
-        var desc = 'View stats, moves, abilities, evolution chain, and type matchups for Pokémon #' + id + '.';
-
-        document.getElementById('og-title').content = title;
-        document.getElementById('og-desc').content = desc;
-        document.getElementById('og-image').content = artUrl;
-        document.getElementById('og-url').content = base + '/pokemon/' + id;
-        document.getElementById('tw-card').content = 'summary_large_image';
-        document.getElementById('tw-title').content = title;
-        document.getElementById('tw-desc').content = desc;
-        document.getElementById('tw-image').content = artUrl;
-        document.title = title;
-        return;
-      }
-
-      // Move detail page: /moves/{name}
-      var moveMatch = path.match(/^\/moves\/(.+)$/);
-      if (moveMatch) {
-        var name = moveMatch[1].replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        var mTitle = name + ' — Move — DexGuide';
-        var mDesc = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
-
-        document.getElementById('og-title').content = mTitle;
-        document.getElementById('og-desc').content = mDesc;
-        document.getElementById('og-url').content = base + '/moves/' + moveMatch[1];
-        document.getElementById('tw-title').content = mTitle;
-        document.getElementById('tw-desc').content = mDesc;
-        document.title = mTitle;
-        return;
-      }
-
-      // Type matchup page: /types/{atk}/vs/{def}
-      var typeMatch = path.match(/^\/types\/(.+)\/vs\/(.+)$/);
-      if (typeMatch) {
-        var atk = typeMatch[1].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        var def = typeMatch[2].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        var tTitle = atk + ' vs ' + def + ' — Type Matchup — DexGuide';
-        document.getElementById('og-title').content = tTitle;
-        document.getElementById('og-url').content = base + path;
-        document.getElementById('tw-title').content = tTitle;
-        document.title = tTitle;
-      }
-    })();
-  </script>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
