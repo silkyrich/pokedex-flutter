@@ -516,13 +516,14 @@ class _DamageCalculatorScreenState extends State<DamageCalculatorScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Weather:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5))),
-                const SizedBox(width: 12),
-                ...['None', 'Sun', 'Rain', 'Sand', 'Hail'].map((w) => Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: GestureDetector(
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: ['None', 'Sun', 'Rain', 'Sand', 'Hail'].map((w) => GestureDetector(
                     onTap: () => setState(() => _weatherLabel = w),
                     child: MouseRegion(
                       cursor: SystemMouseCursors.click,
@@ -538,8 +539,8 @@ class _DamageCalculatorScreenState extends State<DamageCalculatorScreen> {
                         )),
                       ),
                     ),
-                  ),
-                )),
+                  )).toList(),
+                ),
               ],
             ),
           ],
