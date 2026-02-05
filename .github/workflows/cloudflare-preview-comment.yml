@@ -1,0 +1,86 @@
+name: Comment Cloudflare Preview URL
+
+# This workflow triggers when Cloudflare Pages finishes deploying
+# It posts the preview URL as a comment on the PR
+on:
+  # Triggered by Cloudflare Pages deployment webhook
+  deployment_status:
+
+jobs:
+  comment:
+    # Only run when:
+    # 1. Deployment succeeded
+    # 2. It's for a pull request (not main branch)
+    if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment_url != ''
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Find the PR number associated with this deployment
+      - name: Find PR number
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get all open PRs
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${context.payload.deployment.ref}`
+            });
+
+            // Return the first matching PR number (or empty if none)
+            return pullRequests.length > 0 ? pullRequests[0].number : '';
+
+      # Step 2: Post a comment with the preview URL
+      - name: Comment preview URL on PR
+        # Only run if we found a PR
+        if: steps.pr.outputs.result != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.pr.outputs.result }};
+            const deploymentUrl = '${{ github.event.deployment_status.environment_url }}';
+            const commitSha = '${{ github.event.deployment.sha }}';
+            const shortSha = commitSha.substring(0, 7);
+
+            // Create a nice formatted comment
+            const comment = `## 🚀 Cloudflare Pages Preview Deployed!
+
+**Preview URL:** ${deploymentUrl}
+**Commit:** \`${shortSha}\`
+**Status:** ✅ Deployed successfully
+
+---
+*This preview will update automatically with new commits to this PR.*`;
+
+            // Check if we already commented on this PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+
+            // Find our existing comment (if any)
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Cloudflare Pages Preview Deployed')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+            }
