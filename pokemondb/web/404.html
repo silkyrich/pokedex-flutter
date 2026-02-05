@@ -6,33 +6,33 @@
 
   <!-- Open Graph defaults — overridden by script below for deep links -->
   <meta property="og:type" content="website">
-  <meta property="og:title" id="og-title" content="DexDB — Creature Database">
+  <meta property="og:title" id="og-title" content="DexGuide — Pokémon Database">
   <meta property="og:description" id="og-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
   <meta property="og:image" id="og-image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
-  <meta property="og:url" id="og-url" content="https://silkyrich.github.io/pokedex-flutter/">
-  <meta property="og:site_name" content="DexDB">
+  <meta property="og:url" id="og-url" content="https://dexguide.gg/">
+  <meta property="og:site_name" content="DexGuide">
 
   <!-- Twitter Card defaults -->
   <meta name="twitter:card" id="tw-card" content="summary">
-  <meta name="twitter:title" id="tw-title" content="DexDB — Creature Database">
+  <meta name="twitter:title" id="tw-title" content="DexGuide — Pokémon Database">
   <meta name="twitter:description" id="tw-desc" content="Browse every Pokémon, compare stats, calculate damage, build teams, and track your collection.">
   <meta name="twitter:image" id="tw-image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
 
-  <title>DexDB — Creature Database</title>
+  <title>DexGuide — Pokémon Database</title>
 
   <script>
     // Set correct OG meta tags for the current deep link path.
     // 404.html is served at the original URL (e.g. /pokedex-flutter/pokemon/3),
     // so window.location.pathname is correct here — unlike after a redirect to index.html.
     (function() {
-      var path = window.location.pathname.replace('/pokedex-flutter', '');
-      var base = 'https://silkyrich.github.io/pokedex-flutter';
+      var path = window.location.pathname;
+      var base = 'https://dexguide.gg';
 
       var pokemonMatch = path.match(/^\/pokemon\/(\d+)$/);
       if (pokemonMatch) {
         var id = pokemonMatch[1];
         var artUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
-        var title = 'Pokémon #' + id + ' — DexDB';
+        var title = 'Pokémon #' + id + ' — DexGuide';
         var desc = 'View stats, moves, abilities, evolution chain, and type matchups for Pokémon #' + id + '.';
         document.getElementById('og-title').content = title;
         document.getElementById('og-desc').content = desc;
@@ -48,12 +48,12 @@
       var moveMatch = path.match(/^\/moves\/(.+)$/);
       if (moveMatch) {
         var name = moveMatch[1].replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        document.getElementById('og-title').content = name + ' — Move — DexDB';
+        document.getElementById('og-title').content = name + ' — Move — DexGuide';
         document.getElementById('og-desc').content = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
         document.getElementById('og-url').content = base + '/moves/' + moveMatch[1];
-        document.getElementById('tw-title').content = name + ' — Move — DexDB';
+        document.getElementById('tw-title').content = name + ' — Move — DexGuide';
         document.getElementById('tw-desc').content = 'View power, accuracy, PP, type, effect, and all Pokémon that learn ' + name + '.';
-        document.title = name + ' — Move — DexDB';
+        document.title = name + ' — Move — DexGuide';
       }
 
       // Redirect to SPA — store path so index.html can restore the route

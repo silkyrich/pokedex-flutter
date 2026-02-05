@@ -112,7 +112,7 @@ class PokemonDbApp extends StatelessWidget {
         final ct = AppState().colorTheme;
         final themeData = _buildTheme(ct);
         return MaterialApp.router(
-          title: 'DexDB',
+          title: 'DexGuide',
           debugShowCheckedModeBanner: false,
           themeMode: AppState().themeMode,
           theme: ct.isDark ? null : themeData,

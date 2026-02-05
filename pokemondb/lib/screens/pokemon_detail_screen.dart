@@ -231,7 +231,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                             icon: Icons.share_rounded,
                             tooltip: 'Share',
                             onTap: () {
-                              final url = 'https://silkyrich.github.io/pokedex-flutter/pokemon/${widget.pokemonId}';
+                              final url = 'https://dexguide.gg/pokemon/${widget.pokemonId}';
                               Clipboard.setData(ClipboardData(text: url));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

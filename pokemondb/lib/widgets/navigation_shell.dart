@@ -162,7 +162,7 @@ class _MobileDrawer extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'DexDB',
+                        'DexGuide',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
@@ -534,7 +534,7 @@ class _DesktopSidebar extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'DexDB',
+                            'DexGuide',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 18,
@@ -752,7 +752,7 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'DexDB',
+                'DexGuide',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
