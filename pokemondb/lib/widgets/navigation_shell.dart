@@ -18,12 +18,13 @@ class NavigationShell extends StatelessWidget {
 
   // All destinations for drawer/sidebar, grouped
   static const _drawerSections = [
-    _DrawerSection('Browse', [
+    _DrawerSection('Discover', [
       _NavItem('/', 'Pokédex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
       _NavItem('/moves', 'Moves', Icons.flash_on_outlined, Icons.flash_on),
       _NavItem('/types', 'Types', Icons.grid_view_outlined, Icons.grid_view_rounded),
+      _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
     ]),
-    _DrawerSection('Compete', [
+    _DrawerSection('Battle', [
       _NavItem('/battle', 'Head to Head', Icons.compare_arrows_outlined, Icons.compare_arrows),
       _NavItem('/team', 'Team Builder', Icons.groups_outlined, Icons.groups),
       _NavItem('/tools/damage-calc', 'Damage Calculator', Icons.local_fire_department_outlined, Icons.local_fire_department),
@@ -31,20 +32,15 @@ class NavigationShell extends StatelessWidget {
       _NavItem('/tools/speed-tiers', 'Speed Tiers', Icons.speed_outlined, Icons.speed),
       _NavItem('/tools/counter', 'Counter Lookup', Icons.shield_outlined, Icons.shield),
     ]),
-    _DrawerSection('Track', [
+    _DrawerSection('Track Progress', [
       _NavItem('/tools/nuzlocke', 'Nuzlocke Run', Icons.map_outlined, Icons.map),
       _NavItem('/tools/shiny', 'Shiny Hunter', Icons.auto_awesome_outlined, Icons.auto_awesome),
     ]),
-    _DrawerSection('Challenge', [
+    _DrawerSection('Play & Learn', [
       _NavItem('/quiz', 'Quiz', Icons.quiz_outlined, Icons.quiz),
-    ]),
-    _DrawerSection('Learn', [
       _NavItem('/learn', 'How This App Works', Icons.code_outlined, Icons.code_rounded),
       _NavItem('/stats-guide', 'The Maths of Pokémon', Icons.bar_chart_outlined, Icons.bar_chart_rounded),
       _NavItem('/official', 'Official Pokémon', Icons.videogame_asset_outlined, Icons.videogame_asset_rounded),
-    ]),
-    _DrawerSection('Collection', [
-      _NavItem('/favorites', 'Favorites', Icons.favorite_border, Icons.favorite),
     ]),
   ];
 
