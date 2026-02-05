@@ -654,7 +654,7 @@ class _FilterBar extends StatelessWidget {
                   // Active filter chips inline
                   if (activeFilters.isNotEmpty && !expanded) ...[
                     const SizedBox(width: 10),
-                    Expanded(
+                    Flexible(
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
@@ -693,6 +693,7 @@ class _FilterBar extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                   ] else
                     const Spacer(),
                   // Sort indicator
