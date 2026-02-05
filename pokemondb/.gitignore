@@ -1,0 +1,17 @@
+# Dart/Flutter build artifacts
+.dart_tool/
+build/
+.flutter-plugins-dependencies
+
+# Cloudflare Workers
+.wrangler/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+
+# Coverage
+coverage/
