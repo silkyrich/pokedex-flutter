@@ -6,6 +6,7 @@ import '../models/ability.dart';
 import '../models/breeding.dart';
 import '../models/item.dart';
 import '../models/location.dart';
+import '../models/game.dart';
 
 class PokeApiService {
   static const String _baseUrl = 'https://pokeapi.co/api/v2';
@@ -390,5 +391,44 @@ class PokeApiService {
     return (data['results'] as List)
         .map((l) => LocationBasic.fromJson(l))
         .toList();
+  }
+
+  // Phase 4: Game Version, Pokedex, and Growth Rate endpoints
+  static Future<List<GameVersion>> getGameVersions() async {
+    final data = await _getJson('$_baseUrl/version?limit=100');
+    return (data['results'] as List)
+        .map((v) {
+          final url = v['url'] as String;
+          final segments = url.split('/').where((s) => s.isNotEmpty).toList();
+          final id = int.parse(segments.last);
+          return GameVersion(
+            id: id,
+            name: v['name'] as String,
+            versionGroup: '',
+          );
+        })
+        .toList();
+  }
+
+  static Future<VersionGroup> getVersionGroup(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/version-group/${nameOrId.toLowerCase()}');
+    return VersionGroup.fromJson(data);
+  }
+
+  static Future<List<PokedexBasic>> getPokedexList() async {
+    final data = await _getJson('$_baseUrl/pokedex?limit=100');
+    return (data['results'] as List)
+        .map((p) => PokedexBasic.fromJson(p))
+        .toList();
+  }
+
+  static Future<PokedexDetail> getPokedexDetail(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/pokedex/${nameOrId.toLowerCase()}');
+    return PokedexDetail.fromJson(data);
+  }
+
+  static Future<GrowthRateDetail> getGrowthRate(String nameOrId) async {
+    final data = await _getJson('$_baseUrl/growth-rate/${nameOrId.toLowerCase()}');
+    return GrowthRateDetail.fromJson(data);
   }
 }

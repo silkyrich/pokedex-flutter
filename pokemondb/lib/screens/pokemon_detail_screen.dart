@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/pokemon.dart';
 import '../models/ability.dart';
 import '../models/location.dart';
+import '../models/game.dart';
 import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../widgets/type_badge.dart';
@@ -324,6 +325,11 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                     // Phase 3: Encounters
                     _buildEncountersSection(p, theme),
                     const SizedBox(height: 20),
+                    // Phase 4: Growth Rate
+                    if (_species != null) ...[
+                      _buildGrowthSection(_species!, theme),
+                      const SizedBox(height: 20),
+                    ],
                     if (_evoRoot != null && _evoRoot!.flatten().length > 1) ...[
                       _buildEvolutionSection(theme, isDark),
                       const SizedBox(height: 20),
@@ -999,6 +1005,12 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   Widget _buildEncountersSection(PokemonDetail p, ThemeData theme) {
     return _sectionCard('Encounters', theme, _EncountersContent(pokemonId: p.id));
   }
+
+  // Phase 4: Growth Rate Section
+  Widget _buildGrowthSection(PokemonSpecies species, ThemeData theme) {
+    if (species.growthRate == null) return const SizedBox.shrink();
+    return _sectionCard('Growth Rate', theme, _GrowthContent(growthRateName: species.growthRate!));
+  }
 }
 
 // Encounters content widget (extracted to manage its own state)
@@ -1345,6 +1357,181 @@ class _QuickActionButtonState extends State<_QuickActionButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// Growth rate content widget (extracted to manage its own state)
+class _GrowthContent extends StatefulWidget {
+  final String growthRateName;
+
+  const _GrowthContent({required this.growthRateName});
+
+  @override
+  State<_GrowthContent> createState() => _GrowthContentState();
+}
+
+class _GrowthContentState extends State<_GrowthContent> {
+  GrowthRateDetail? _growthRate;
+  bool _loading = false;
+  bool _expanded = false;
+
+  Future<void> _loadGrowthRate() async {
+    if (_growthRate != null) return;
+    setState(() => _loading = true);
+    try {
+      final growthRate = await PokeApiService.getGrowthRate(widget.growthRateName);
+      if (mounted) {
+        setState(() {
+          _growthRate = growthRate;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Key levels to show
+    final keyLevels = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() => _expanded = !_expanded);
+            if (_expanded && _growthRate == null) {
+              _loadGrowthRate();
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _growthRate?.displayName ?? widget.growthRateName.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'Experience growth pattern',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          if (_loading)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            )
+          else if (_growthRate == null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Failed to load growth rate data.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Experience Required',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...keyLevels.map((level) {
+                    final levelData = _growthRate!.levels.firstWhere(
+                      (l) => l.level == level,
+                      orElse: () => ExperienceLevel(level: level, experience: 0),
+                    );
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Level $level',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                          Text(
+                            '${levelData.experience.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')} XP',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+        ],
+      ],
     );
   }
 }

@@ -9,6 +9,15 @@ class MoveDetail {
   final String? effectText;
   final String? flavorText;
   final List<MovePokemonRef> learnedByPokemon;
+  // Phase 4: Extended move data
+  final int priority;
+  final String? contestType;
+  final String? contestEffect;
+  final int? ailmentChance;
+  final String? ailment;
+  final int? critRate;
+  final List<StatChange> statChanges;
+  final String? target;
 
   MoveDetail({
     required this.id,
@@ -21,6 +30,14 @@ class MoveDetail {
     this.effectText,
     this.flavorText,
     this.learnedByPokemon = const [],
+    this.priority = 0,
+    this.contestType,
+    this.contestEffect,
+    this.ailmentChance,
+    this.ailment,
+    this.critRate,
+    this.statChanges = const [],
+    this.target,
   });
 
   String get displayName =>
@@ -56,6 +73,15 @@ class MoveDetail {
       }
     }
 
+    // Phase 4: Parse stat changes
+    final statChanges = <StatChange>[];
+    for (final sc in json['stat_changes'] as List? ?? []) {
+      statChanges.add(StatChange(
+        stat: sc['stat']['name'] as String,
+        change: sc['change'] as int,
+      ));
+    }
+
     return MoveDetail(
       id: json['id'],
       name: json['name'],
@@ -67,8 +93,26 @@ class MoveDetail {
       effectText: effectText,
       flavorText: flavorText,
       learnedByPokemon: learnedBy,
+      priority: json['priority'] as int? ?? 0,
+      contestType: json['contest_type']?['name'] as String?,
+      contestEffect: json['contest_effect']?['effect'] as String?,
+      ailmentChance: json['meta']?['ailment_chance'] as int?,
+      ailment: json['meta']?['ailment']?['name'] as String?,
+      critRate: json['meta']?['crit_rate'] as int?,
+      statChanges: statChanges,
+      target: json['target']?['name'] as String?,
     );
   }
+}
+
+class StatChange {
+  final String stat;
+  final int change;
+
+  StatChange({required this.stat, required this.change});
+
+  String get displayStat =>
+      stat.split('-').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
 }
 
 class MovePokemonRef {

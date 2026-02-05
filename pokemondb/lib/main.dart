@@ -27,6 +27,8 @@ import 'screens/items_screen.dart';
 import 'screens/item_detail_screen.dart';
 import 'screens/locations_screen.dart';
 import 'screens/location_detail_screen.dart';
+import 'screens/pokedexes_screen.dart';
+import 'screens/pokedex_detail_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -115,6 +117,14 @@ final _router = GoRouter(
           builder: (context, state) {
             final name = state.pathParameters['name']!;
             return LocationDetailScreen(locationName: name);
+          },
+        ),
+        GoRoute(path: '/pokedexes', builder: (context, state) => const PokedexesScreen()),
+        GoRoute(
+          path: '/pokedexes/:name',
+          builder: (context, state) {
+            final name = state.pathParameters['name']!;
+            return PokedexDetailScreen(pokedexName: name);
           },
         ),
         GoRoute(

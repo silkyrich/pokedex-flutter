@@ -248,6 +248,8 @@ class PokemonSpecies {
   final bool isLegendary;
   final bool isMythical;
   final int generation;
+  // Phase 4: Growth rate
+  final String? growthRate;
 
   PokemonSpecies({
     required this.id,
@@ -269,6 +271,7 @@ class PokemonSpecies {
     this.isLegendary = false,
     this.isMythical = false,
     this.generation = 1,
+    this.growthRate,
   });
 
   factory PokemonSpecies.fromJson(Map<String, dynamic> json) {
@@ -344,6 +347,7 @@ class PokemonSpecies {
       isLegendary: json['is_legendary'] as bool? ?? false,
       isMythical: json['is_mythical'] as bool? ?? false,
       generation: generation,
+      growthRate: json['growth_rate']?['name'] as String?,
     );
   }
 }

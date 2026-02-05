@@ -20,6 +20,7 @@ class NavigationShell extends StatelessWidget {
   static const _drawerSections = [
     _DrawerSection('Discover', [
       _NavItem('/', 'Pokédex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
+      _NavItem('/pokedexes', 'Pokédexes', Icons.menu_book_outlined, Icons.menu_book),
       _NavItem('/moves', 'Moves', Icons.flash_on_outlined, Icons.flash_on),
       _NavItem('/items', 'Items', Icons.inventory_2_outlined, Icons.inventory_2),
       _NavItem('/locations', 'Locations', Icons.map_outlined, Icons.map),
