@@ -93,8 +93,8 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_filterTypes.isNotEmpty) {
         final filteredResults = <PokemonBasic>[];
         for (final pokemon in results) {
-          final details = await PokeApiService.getPokemon(pokemon.id);
-          final types = details.types.map((t) => t.toLowerCase()).toSet();
+          final details = await PokeApiService.getPokemonDetail(pokemon.id);
+          final types = details.types.map((t) => t.name.toLowerCase()).toSet();
           if (_filterTypes.any((ft) => types.contains(ft))) {
             filteredResults.add(pokemon);
           }
@@ -121,8 +121,8 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _loadMoveFilter(String moveName) async {
     setState(() => _loadingMoveFilter = true);
     try {
-      final move = await PokeApiService.getMove(moveName);
-      final ids = move.learnedBy.map((p) => p.id).toSet();
+      final move = await PokeApiService.getMoveDetail(moveName);
+      final ids = move.learnedByPokemon.map((p) => p.id).toSet();
       if (mounted) {
         setState(() {
           _moveFilterIds = ids;
