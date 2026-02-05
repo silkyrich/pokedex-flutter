@@ -29,6 +29,8 @@ import 'screens/locations_screen.dart';
 import 'screens/location_detail_screen.dart';
 import 'screens/pokedexes_screen.dart';
 import 'screens/pokedex_detail_screen.dart';
+import 'screens/egg_groups_screen.dart';
+import 'screens/egg_group_detail_screen.dart';
 import 'widgets/navigation_shell.dart';
 import 'services/app_state.dart';
 
@@ -125,6 +127,14 @@ final _router = GoRouter(
           builder: (context, state) {
             final name = state.pathParameters['name']!;
             return PokedexDetailScreen(pokedexName: name);
+          },
+        ),
+        GoRoute(path: '/egg-groups', builder: (context, state) => const EggGroupsScreen()),
+        GoRoute(
+          path: '/egg-groups/:name',
+          builder: (context, state) {
+            final name = state.pathParameters['name']!;
+            return EggGroupDetailScreen(eggGroupName: name);
           },
         ),
         GoRoute(

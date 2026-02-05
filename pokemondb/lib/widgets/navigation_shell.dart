@@ -39,6 +39,7 @@ class NavigationShell extends StatelessWidget {
     _DrawerSection('Track Progress', [
       _NavItem('/tools/nuzlocke', 'Nuzlocke Run', Icons.map_outlined, Icons.map),
       _NavItem('/tools/shiny', 'Shiny Hunter', Icons.auto_awesome_outlined, Icons.auto_awesome),
+      _NavItem('/egg-groups', 'Egg Groups', Icons.egg_outlined, Icons.egg),
     ]),
     _DrawerSection('Play & Learn', [
       _NavItem('/quiz', 'Quiz', Icons.quiz_outlined, Icons.quiz),
