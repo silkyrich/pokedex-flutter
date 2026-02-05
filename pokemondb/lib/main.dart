@@ -8,6 +8,7 @@ import 'screens/moves_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/team_screen.dart';
+import 'screens/team_coverage_screen.dart';
 import 'screens/move_detail_screen.dart';
 import 'screens/type_matchup_screen.dart';
 import 'screens/battle_screen.dart';
@@ -67,6 +68,7 @@ final _router = GoRouter(
           },
         ),
         GoRoute(path: '/team', builder: (context, state) => const TeamScreen()),
+        GoRoute(path: '/team/coverage', builder: (context, state) => const TeamCoverageScreen()),
         GoRoute(path: '/tools', redirect: (_, __) => '/'),
         GoRoute(path: '/tools/stat-calc', builder: (context, state) => const StatCalculatorScreen()),
         GoRoute(

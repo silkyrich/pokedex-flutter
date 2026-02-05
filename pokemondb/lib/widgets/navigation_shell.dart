@@ -27,6 +27,7 @@ class NavigationShell extends StatelessWidget {
     _DrawerSection('Battle', [
       _NavItem('/battle', 'Head to Head', Icons.compare_arrows_outlined, Icons.compare_arrows),
       _NavItem('/team', 'Team Builder', Icons.groups_outlined, Icons.groups),
+      _NavItem('/team/coverage', 'Team Coverage', Icons.grid_on_outlined, Icons.grid_on),
       _NavItem('/tools/damage-calc', 'Damage Calculator', Icons.local_fire_department_outlined, Icons.local_fire_department),
       _NavItem('/tools/stat-calc', 'Stat Calculator', Icons.bar_chart_outlined, Icons.bar_chart),
       _NavItem('/tools/speed-tiers', 'Speed Tiers', Icons.speed_outlined, Icons.speed),
