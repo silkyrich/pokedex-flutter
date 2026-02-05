@@ -65,7 +65,9 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
 
     try {
       final detail = await PokeApiService.getPokemonDetail(id);
-      final species = await PokeApiService.getPokemonSpecies(id);
+      // Use speciesId for species fetch (forms like Mega Charizard X id=10034
+      // have speciesId=6, and the species endpoint only accepts species IDs)
+      final species = await PokeApiService.getPokemonSpecies(detail.speciesId);
       EvolutionInfo? evoRoot;
       if (species.evolutionChainId != null) {
         evoRoot = await PokeApiService.getEvolutionChain(species.evolutionChainId!);
@@ -159,6 +161,15 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
     }
   }
 
+  void _switchToForm(int slot, int formId) {
+    _loadPokemon(slot, formId);
+    final id1 = slot == 1 ? formId : _pokemon1?.id;
+    final id2 = slot == 2 ? formId : _pokemon2?.id;
+    if (id1 != null && id2 != null) {
+      context.go('/battle/$id1/$id2');
+    }
+  }
+
   void _switchToEvolution(int slot, EvolutionInfo evo) {
     _loadPokemon(slot, evo.id);
     final id1 = slot == 1 ? evo.id : _pokemon1?.id;
@@ -240,6 +251,28 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
                         const SizedBox(height: 20),
                         _buildMoveAnalysis(theme, isDark, isWide),
                         const SizedBox(height: 20),
+                        // Form pickers
+                        if (_hasAnyForms()) ...[
+                          if (isWide)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: _buildFormPicker(1, theme, isDark)),
+                                const SizedBox(width: 20),
+                                Expanded(child: _buildFormPicker(2, theme, isDark)),
+                              ],
+                            )
+                          else
+                            Column(
+                              children: [
+                                _buildFormPicker(1, theme, isDark),
+                                const SizedBox(height: 16),
+                                _buildFormPicker(2, theme, isDark),
+                              ],
+                            ),
+                          const SizedBox(height: 20),
+                        ],
+                        // Evolution steppers
                         if (isWide)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -924,6 +957,100 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
 
     result.sort((a, b) => b.effectivePower.compareTo(a.effectivePower));
     return result;
+  }
+
+  // --- Form Picker ---
+  bool _hasAnyForms() {
+    final v1 = _species1?.varieties ?? [];
+    final v2 = _species2?.varieties ?? [];
+    return v1.length > 1 || v2.length > 1;
+  }
+
+  Widget _buildFormPicker(int slot, ThemeData theme, bool isDark) {
+    final species = slot == 1 ? _species1 : _species2;
+    final pokemon = slot == 1 ? _pokemon1 : _pokemon2;
+    if (species == null || pokemon == null) return const SizedBox.shrink();
+    final varieties = species.varieties;
+    if (varieties.length <= 1) return const SizedBox.shrink();
+
+    final color = TypeColors.getColor(pokemon.types.first.name);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome_rounded, size: 18, color: color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${species.name[0].toUpperCase()}${species.name.substring(1)} Forms',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Tap a form to compare that variant',
+              style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: varieties.map((form) {
+                  final isActive = pokemon.id == form.id;
+                  final spriteUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${form.id}.png';
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: GestureDetector(
+                      onTap: isActive ? null : () => _switchToForm(slot, form.id),
+                      child: MouseRegion(
+                        cursor: isActive ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? color.withOpacity(isDark ? 0.2 : 0.1)
+                                : isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isActive ? color : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.network(spriteUrl, width: 40, height: 40,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28)),
+                              const SizedBox(height: 2),
+                              Text(
+                                form.formLabel,
+                                style: TextStyle(
+                                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                                  fontSize: 10,
+                                  color: isActive ? color : theme.colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // --- Evolution Stepper ---
