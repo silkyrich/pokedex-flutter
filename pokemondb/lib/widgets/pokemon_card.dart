@@ -146,6 +146,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                                   ? widget.pokemon.imageUrl
                                   : widget.pokemon.spriteUrl,
                               fit: BoxFit.contain,
+                              filterQuality: AppState().useArtwork
+                                  ? FilterQuality.high
+                                  : FilterQuality.none,
                               errorBuilder: (_, __, ___) => Icon(
                                 Icons.catching_pokemon,
                                 size: 40,
