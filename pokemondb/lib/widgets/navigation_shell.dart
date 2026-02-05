@@ -8,10 +8,11 @@ class NavigationShell extends StatelessWidget {
 
   const NavigationShell({super.key, required this.child});
 
-  // Bottom bar: 3 primary destinations
+  // Bottom bar: 4 primary destinations
   static const _bottomItems = [
     _NavItem('/', 'Pokédex', Icons.catching_pokemon_outlined, Icons.catching_pokemon),
     _NavItem('/battle', 'Battle', Icons.compare_arrows_outlined, Icons.compare_arrows),
+    _NavItem('/quiz', 'Quiz', Icons.quiz_outlined, Icons.quiz),
     _NavItem('/team', 'Team', Icons.groups_outlined, Icons.groups),
   ];
 
@@ -54,7 +55,6 @@ class NavigationShell extends StatelessWidget {
         location.startsWith('/tools') ||
         location.startsWith('/favorites') ||
         location.startsWith('/search') ||
-        location.startsWith('/quiz') ||
         location.startsWith('/pokemon')) {
       return -1;
     }

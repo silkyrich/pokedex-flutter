@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../services/pokeapi_service.dart';
@@ -223,6 +224,24 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                                 appState.toggleTeamMember(widget.pokemonId);
                               },
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Share
+                          _ActionChip(
+                            icon: Icons.share_rounded,
+                            tooltip: 'Share',
+                            onTap: () {
+                              final url = 'https://silkyrich.github.io/pokedex-flutter/pokemon/${widget.pokemonId}';
+                              Clipboard.setData(ClipboardData(text: url));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Link copied for ${_pokemon?.displayName ?? 'Pokemon #${widget.pokemonId}'}'),
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(width: 8),
                           _NavChip(
