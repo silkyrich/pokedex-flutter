@@ -45,7 +45,7 @@ class AboutScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'DexDB',
+                          'DexGuide',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,

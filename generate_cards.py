@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an A4 PDF with 8 DexDB marketing cards, each with a QR code."""
+"""Generate an A4 PDF with 8 DexGuide marketing cards, each with a QR code."""
 
 import io
 import qrcode
@@ -9,8 +9,8 @@ from reportlab.lib.colors import HexColor, white, black
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
-URL = "https://silkyrich.github.io/pokedex-flutter/"
-OUTPUT = "/home/user/pokedex-flutter/dexdb-cards.pdf"
+URL = "https://dexguide.gg/"
+OUTPUT = "/home/user/pokedex-flutter/dexguide-cards.pdf"
 
 # A4 dimensions
 PAGE_W, PAGE_H = A4  # 210mm x 297mm in points
@@ -74,10 +74,10 @@ def draw_card(c: canvas.Canvas, x: float, y: float, w: float, h: float, qr_img):
     # --- Top stripe: site name ---
     c.setFillColor(white)
     c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(x + w / 2, y + h - stripe_h + 1.5 * mm, "DexDB")
-    c.setFont("Helvetica", 6.5)
+    c.drawCentredString(x + w / 2, y + h - stripe_h + 1.5 * mm, "DexGuide")
+    c.setFont("Helvetica", 7)
     c.setFillColor(HexColor("#c0d0ff"))
-    c.drawCentredString(x + w / 2, y + h - stripe_h - 3 * mm + 1 * mm, "silkyrich.github.io/pokedex-flutter")
+    c.drawCentredString(x + w / 2, y + h - stripe_h - 3 * mm + 1 * mm, "dexguide.gg")
 
     # --- Tagline ---
     tag_y = y + h - stripe_h - 8 * mm
@@ -140,8 +140,8 @@ def draw_cut_guides(c: canvas.Canvas):
 def main():
     qr_img = make_qr(URL)
     c = canvas.Canvas(OUTPUT, pagesize=A4)
-    c.setTitle("DexDB - QR Cards")
-    c.setAuthor("DexDB")
+    c.setTitle("DexGuide - QR Cards")
+    c.setAuthor("DexGuide")
 
     # Draw 8 cards (2 cols x 4 rows)
     for row in range(ROWS):
