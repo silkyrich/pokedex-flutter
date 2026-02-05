@@ -1,15 +1,18 @@
 /**
- * DexGuide Cloudflare Worker
+ * DexGuide — Cloudflare Pages Function (catch-all)
  *
- * Intercepts crawler/bot requests and returns HTML with correct
- * Open Graph meta tags for rich link previews (iMessage, Slack,
- * Discord, Twitter, Facebook, etc.).
+ * Runs on every request to dexguide.gg. Two jobs:
  *
- * Regular users are passed through to the origin (GitHub Pages)
- * untouched.
+ * 1. CRAWLER REQUESTS: Returns a small HTML page with correct Open Graph
+ *    meta tags so link previews in iMessage, Slack, Discord, Twitter,
+ *    Facebook etc. show the right Pokemon artwork, name, and description.
  *
- * Deploy: Cloudflare Dashboard -> Workers & Pages -> Create Worker
- * Route:  dexguide.gg/*
+ * 2. REGULAR USERS: Falls through to static assets. If no static file
+ *    matches (SPA deep link like /pokemon/6), the _redirects rule
+ *    serves index.html so Flutter's router handles it client-side.
+ *
+ * No copyrighted assets stored — OG image URLs point to PokeAPI's
+ * hosted artwork on GitHub.
  */
 
 const SITE_NAME = 'DexGuide';
@@ -17,7 +20,7 @@ const SITE_URL = 'https://dexguide.gg';
 const DEFAULT_DESCRIPTION =
   'Your free Pokemon database. Stats, moves, type matchups, team builder, and more for all 1025 Pokemon.';
 
-// PokeAPI official artwork URL pattern — hosted by PokeAPI, not us
+// PokeAPI official artwork — hosted by PokeAPI on GitHub, not by us
 const ARTWORK_URL = (id) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 
@@ -53,9 +56,6 @@ function isCrawler(request) {
   if (CRAWLER_UA_PATTERNS.some((p) => ua.toLowerCase().includes(p.toLowerCase()))) {
     return true;
   }
-  // Some crawlers (iMessage) don't identify themselves clearly,
-  // but set Accept headers that prefer HTML without JS capability.
-  // Check for the "purpose" header that some prerender services set.
   const purpose = request.headers.get('Purpose') || request.headers.get('X-Purpose') || '';
   if (purpose.toLowerCase() === 'preview') {
     return true;
@@ -63,10 +63,9 @@ function isCrawler(request) {
   return false;
 }
 
-// --- Name formatting ---
+// --- Helpers ---
 
 function formatPokemonName(name) {
-  // PokeAPI returns lowercase hyphenated: "mr-mime", "tapu-koko"
   return name
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -77,17 +76,16 @@ function padId(id) {
   return String(id).padStart(3, '0');
 }
 
-// --- PokeAPI fetching with aggressive caching ---
+// --- PokeAPI fetch with Cloudflare edge caching ---
 
 async function fetchPokemonInfo(id) {
   try {
     const resp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`, {
-      cf: { cacheTtl: 604800, cacheEverything: true }, // cache 7 days
+      cf: { cacheTtl: 604800, cacheEverything: true }, // 7 days
     });
     if (!resp.ok) return null;
     const data = await resp.json();
 
-    // Get proper English name from species endpoint
     let displayName = formatPokemonName(data.name);
     try {
       const speciesResp = await fetch(data.species.url, {
@@ -111,9 +109,9 @@ async function fetchPokemonInfo(id) {
 
 // --- OG HTML builder ---
 
-function buildOgHtml({ title, description, image, url, path }) {
-  // Escape HTML entities in dynamic content
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function buildOgHtml({ title, description, image, url }) {
+  const esc = (s) =>
+    s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
   return new Response(
     `<!DOCTYPE html>
@@ -147,7 +145,7 @@ function buildOgHtml({ title, description, image, url, path }) {
       status: 200,
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
-        'Cache-Control': 'public, max-age=3600', // cache OG responses 1h
+        'Cache-Control': 'public, max-age=3600',
       },
     }
   );
@@ -176,7 +174,6 @@ async function handlePokemonRoute(id) {
 }
 
 async function handleBattleRoute(id1, id2) {
-  // Fetch both Pokemon in parallel
   const [info1, info2] = await Promise.all([
     fetchPokemonInfo(id1),
     fetchPokemonInfo(id2),
@@ -188,7 +185,7 @@ async function handleBattleRoute(id1, id2) {
   return buildOgHtml({
     title: `${name1} vs ${name2} — Head to Head — ${SITE_NAME}`,
     description: `Compare ${name1} and ${name2} head to head. Type matchups, base stats, moves, and matchup analysis.`,
-    image: ARTWORK_URL(id1), // Lead with first Pokemon's artwork
+    image: ARTWORK_URL(id1),
     url: `${SITE_URL}/battle/${id1}/${id2}`,
   });
 }
@@ -214,43 +211,41 @@ function handleDefault(path) {
   });
 }
 
-// --- Main handler ---
+// --- Pages Function entry point ---
 
-export default {
-  async fetch(request) {
-    // Only intercept GET requests from crawlers
-    if (request.method !== 'GET' || !isCrawler(request)) {
-      return fetch(request);
-    }
+export async function onRequest(context) {
+  const { request } = context;
 
-    const url = new URL(request.url);
-    const path = url.pathname;
+  // Only intercept GET requests from crawlers
+  if (request.method !== 'GET' || !isCrawler(request)) {
+    return context.next();
+  }
 
-    // Route matching
-    let match;
+  const url = new URL(request.url);
+  const path = url.pathname;
+  let match;
 
-    // /pokemon/:id
-    match = path.match(/^\/pokemon\/(\d+)$/);
-    if (match) {
-      return handlePokemonRoute(parseInt(match[1], 10));
-    }
+  // /pokemon/:id
+  match = path.match(/^\/pokemon\/(\d+)$/);
+  if (match) {
+    return handlePokemonRoute(parseInt(match[1], 10));
+  }
 
-    // /battle/:id1/:id2
-    match = path.match(/^\/battle\/(\d+)\/(\d+)$/);
-    if (match) {
-      return handleBattleRoute(
-        parseInt(match[1], 10),
-        parseInt(match[2], 10)
-      );
-    }
+  // /battle/:id1/:id2
+  match = path.match(/^\/battle\/(\d+)\/(\d+)$/);
+  if (match) {
+    return handleBattleRoute(
+      parseInt(match[1], 10),
+      parseInt(match[2], 10)
+    );
+  }
 
-    // /types/:atk/vs/:def
-    match = path.match(/^\/types\/([a-z]+)\/vs\/([a-z]+)$/);
-    if (match) {
-      return handleTypeMatchupRoute(match[1], match[2]);
-    }
+  // /types/:atk/vs/:def
+  match = path.match(/^\/types\/([a-z]+)\/vs\/([a-z]+)$/);
+  if (match) {
+    return handleTypeMatchupRoute(match[1], match[2]);
+  }
 
-    // All other crawler requests get generic OG tags
-    return handleDefault(path);
-  },
-};
+  // All other crawler requests — generic OG tags
+  return handleDefault(path);
+}

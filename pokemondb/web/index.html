@@ -24,7 +24,7 @@
 
   <title>DexGuide — Pokémon Database</title>
 
-  <!-- OG meta tags for crawlers are handled by Cloudflare Worker (see cloudflare-worker/worker.js) -->
+  <!-- OG meta tags for crawlers are handled by Cloudflare Pages Function (see functions/[[path]].js) -->
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -36,15 +36,5 @@
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
-  <script>
-    // Restore deep link path after 404.html redirect
-    (function() {
-      var redirectPath = sessionStorage.getItem('redirectPath');
-      if (redirectPath) {
-        sessionStorage.removeItem('redirectPath');
-        history.replaceState(null, '', redirectPath);
-      }
-    })();
-  </script>
 </body>
 </html>
