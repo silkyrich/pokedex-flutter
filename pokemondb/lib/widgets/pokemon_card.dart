@@ -92,14 +92,17 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E1E2A) : Colors.white,
-              borderRadius: BorderRadius.circular(20), // Softer, more joyful corners
+              borderRadius: BorderRadius.circular(20),
+              // Pokemon card-style gold border for showcase
               border: Border.all(
-                color: _hovered
-                    ? _primaryColor.withOpacity(0.5)
-                    : isDark
-                        ? Colors.white.withOpacity(0.06)
-                        : Colors.grey.shade200,
-                width: _hovered ? 2 : 1,
+                color: useShowcaseLayout
+                    ? const Color(0xFFD4AF37) // Gold border for giant cards
+                    : _hovered
+                        ? _primaryColor.withOpacity(0.5)
+                        : isDark
+                            ? Colors.white.withOpacity(0.06)
+                            : Colors.grey.shade200,
+                width: useShowcaseLayout ? 4 : (_hovered ? 2 : 1),
               ),
               boxShadow: _hovered
                   ? [
@@ -270,6 +273,25 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
 
+                  // Showcase: Artwork frame (like real cards)
+                  if (useShowcaseLayout)
+                    Positioned(
+                      top: 60,
+                      left: 12,
+                      right: 12,
+                      bottom: 160,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFAF0), // Light cream for artwork area
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFD4AF37).withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+
                   // Pokemon image - fills entire card with Hero animation
                   Padding(
                     padding: useTinyText
@@ -277,7 +299,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         : useCompactText
                             ? const EdgeInsets.all(8)
                             : useShowcaseLayout
-                                ? const EdgeInsets.fromLTRB(20, 70, 20, 80)
+                                ? const EdgeInsets.fromLTRB(24, 72, 24, 170)
                                 : const EdgeInsets.all(16),
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
@@ -379,6 +401,87 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                       ),
                     ),
+                  // Showcase: Info section (like moves section on real cards)
+                  if (useShowcaseLayout && widget.bst != null)
+                    Positioned(
+                      bottom: 65,
+                      left: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF8DC), // Cream color like real cards
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFD4AF37).withOpacity(0.4),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Power indicator (styled like an attack)
+                            Row(
+                              children: [
+                                // Type energy icon
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: _primaryColor,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // "Attack" name
+                                Expanded(
+                                  child: Text(
+                                    'Base Power',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ),
+                                // Damage number
+                                Text(
+                                  '${widget.bst}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                    color: Colors.grey.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            // Description (like attack description)
+                            Text(
+                              'Total of all base stats combined.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // Showcase: Decorative line separator (like real cards)
                   if (useShowcaseLayout)
                     Positioned(
@@ -408,44 +511,30 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       left: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.0),
-                              Colors.black.withOpacity(0.7),
-                              Colors.black.withOpacity(0.85),
-                            ],
-                            stops: const [0.0, 0.3, 1.0],
+                          color: const Color(0xFFFFF8DC), // Cream color like real cards
+                          border: const Border(
+                            top: BorderSide(
+                              color: Color(0xFFD4AF37),
+                              width: 2,
+                            ),
                           ),
                           borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(19),
-                            bottomRight: Radius.circular(19),
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
                           ),
                         ),
                         child: Row(
                           children: [
                             // Pokedex number - styled like card number
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: _primaryColor.withOpacity(0.6),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Text(
-                                widget.pokemon.idString,
-                                style: TextStyle(
-                                  color: _primaryColor.withOpacity(0.9),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                ),
+                            Text(
+                              widget.pokemon.idString,
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
                               ),
                             ),
                             const Spacer(),
