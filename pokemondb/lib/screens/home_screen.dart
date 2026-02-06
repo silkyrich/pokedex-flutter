@@ -400,6 +400,43 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(fontSize: 15),
                               ),
                               const SizedBox(height: 12),
+                              // Card size slider
+                              ListenableBuilder(
+                                listenable: AppState(),
+                                builder: (context, _) => Row(
+                                  children: [
+                                    Icon(
+                                      Icons.photo_size_select_large_outlined,
+                                      size: 16,
+                                      color: colorScheme.onSurface.withOpacity(0.4),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Card size',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurface.withOpacity(0.5),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Slider(
+                                        value: AppState().cardScale,
+                                        min: 0.7,
+                                        max: 1.3,
+                                        divisions: 12,
+                                        onChanged: (value) => AppState().setCardScale(value),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.view_module_rounded,
+                                      size: 16,
+                                      color: colorScheme.onSurface.withOpacity(0.4),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                               // Filter bar
                 _FilterBar(
                   activeFilterCount: _activeFilterCount,

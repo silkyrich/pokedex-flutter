@@ -847,37 +847,7 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Sprite style toggle
-                _sectionLabel(context, Icons.image_outlined, 'SPRITE STYLE'),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SpriteStyleOption(
-                        icon: Icons.grid_on,
-                        label: 'Pixel Art',
-                        isSelected: !appState.useArtwork,
-                        onTap: () {
-                          if (appState.useArtwork) appState.toggleSpriteStyle();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _SpriteStyleOption(
-                        icon: Icons.image,
-                        label: 'HD Artwork',
-                        isSelected: appState.useArtwork,
-                        onTap: () {
-                          if (!appState.useArtwork) appState.toggleSpriteStyle();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Card size slider
+                // Card size slider (also available on home screen)
                 _sectionLabel(context, Icons.photo_size_select_large_outlined, 'CARD SIZE'),
                 const SizedBox(height: 10),
                 Row(

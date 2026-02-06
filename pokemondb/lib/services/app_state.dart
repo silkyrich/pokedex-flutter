@@ -48,7 +48,7 @@ class AppState extends ChangeNotifier {
       colorTheme.isDark ? ThemeMode.dark : ThemeMode.light;
 
   // Sprite style — pixel art (sprite) vs high-quality artwork
-  bool _useArtwork = false;
+  bool _useArtwork = true; // Default to HD artwork
   bool get useArtwork => _useArtwork;
 
   // Card size scale — controls how large Pokemon cards appear (0.7 = smaller, 1.3 = larger)
