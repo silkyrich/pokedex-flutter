@@ -182,9 +182,11 @@ async function fetchPokemonInfo(id) {
 
 // --- OG HTML builder ---
 
-function buildOgHtml({ title, description, image, url }) {
+function buildOgHtml({ title, description, image, url, twitterCard, playerUrl, playerWidth, playerHeight }) {
   const esc = (s) =>
     s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+  const card = twitterCard || 'summary_large_image';
 
   return new Response(
     `<!DOCTYPE html>
@@ -202,10 +204,15 @@ function buildOgHtml({ title, description, image, url }) {
   <meta property="og:url" content="${esc(url)}" />
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:card" content="${esc(card)}" />
   <meta name="twitter:title" content="${esc(title)}" />
   <meta name="twitter:description" content="${esc(description)}" />
   <meta name="twitter:image" content="${esc(image)}" />
+  ${playerUrl ? `
+  <!-- Twitter Player Card (Interactive Embed) -->
+  <meta name="twitter:player" content="${esc(playerUrl)}" />
+  <meta name="twitter:player:width" content="${esc(playerWidth || '520')}" />
+  <meta name="twitter:player:height" content="${esc(playerHeight || '730')}" />` : ''}
 
   <!-- Redirect real users who somehow land here -->
   <meta http-equiv="refresh" content="0;url=${esc(url)}" />
@@ -219,6 +226,295 @@ function buildOgHtml({ title, description, image, url }) {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
         'Cache-Control': 'public, max-age=3600',
+      },
+    }
+  );
+}
+
+// --- Embed page builder for Twitter player card ---
+
+function buildEmbedHtml(info) {
+  const typeColors = {
+    normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
+    grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+    ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+    rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
+    steel: '#B8B8D0', fairy: '#EE99AC',
+  };
+
+  const primaryColor = typeColors[info.types[0].toLowerCase()] || '#777';
+  const heightM = (info.height / 10).toFixed(1);
+  const weightKg = (info.weight / 10).toFixed(1);
+
+  return new Response(
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${info.name} - Pokémon Card</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+      background: #2a2a2a;
+      padding: 12px;
+    }
+
+    /* Simple Pokemon Card */
+    .card {
+      background: linear-gradient(135deg, #f4e5a8 0%, #e8d284 100%);
+      border-radius: 16px;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .card-inner {
+      background: #f5f0e8;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .name {
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .hp {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #d32f2f;
+    }
+
+    .stage {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    /* Types */
+    .types {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .type {
+      padding: 4px 10px;
+      border-radius: 10px;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* Artwork */
+    .artwork {
+      background: linear-gradient(135deg, ${primaryColor}20, ${primaryColor}10);
+      border: 2px solid ${primaryColor}40;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      text-align: center;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .artwork img {
+      max-width: 90%;
+      max-height: 90%;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    }
+
+    /* Stats */
+    .stats {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+      gap: 8px;
+    }
+
+    .stat-name {
+      font-size: 11px;
+      font-weight: bold;
+      color: #555;
+      min-width: 40px;
+    }
+
+    .stat-bar {
+      flex: 1;
+      height: 5px;
+      background: #eee;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .stat-fill {
+      height: 100%;
+      background: ${primaryColor};
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: ${primaryColor};
+      min-width: 35px;
+      text-align: right;
+    }
+
+    /* Abilities */
+    .abilities {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .abilities-title {
+      font-size: 10px;
+      font-weight: bold;
+      color: #999;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .ability {
+      font-size: 11px;
+      color: #333;
+      font-weight: 600;
+      padding: 5px 8px;
+      background: ${primaryColor}15;
+      border-left: 3px solid ${primaryColor};
+      border-radius: 3px;
+      margin-bottom: 4px;
+    }
+
+    .ability:last-child { margin-bottom: 0; }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #666;
+      padding-top: 6px;
+    }
+
+    .footer span { font-weight: 600; }
+
+    /* Buttons */
+    .buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      background: ${primaryColor};
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      display: block;
+    }
+
+    .btn.secondary {
+      background: white;
+      color: ${primaryColor};
+      border: 2px solid ${primaryColor};
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-inner">
+      <div class="header">
+        <div class="name">${info.name}</div>
+        <div class="hp"><span style="font-size:18px">HP</span> ${info.stats.hp}</div>
+      </div>
+
+      <div class="stage">Basic Pokémon</div>
+
+      <div class="types">
+        ${info.types.map(t => `<a href="${SITE_URL}/?type=${t.toLowerCase()}" target="_top" class="type" style="background: ${typeColors[t.toLowerCase()] || '#777'}">${t}</a>`).join('')}
+      </div>
+
+      <div class="artwork">
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${info.id}.png" alt="${info.name}">
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-name">ATK</span>
+          <div class="stat-bar"><div class="stat-fill" style="width: ${(info.stats.attack / 255) * 100}%"></div></div>
+          <span class="stat-value">${info.stats.attack}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-name">DEF</span>
+          <div class="stat-bar"><div class="stat-fill" style="width: ${(info.stats.defense / 255) * 100}%"></div></div>
+          <span class="stat-value">${info.stats.defense}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-name">SPD</span>
+          <div class="stat-bar"><div class="stat-fill" style="width: ${(info.stats.speed / 255) * 100}%"></div></div>
+          <span class="stat-value">${info.stats.speed}</span>
+        </div>
+      </div>
+
+      <div class="abilities">
+        <div class="abilities-title">Abilities</div>
+        ${info.abilities.map(a => `<div class="ability">${a}</div>`).join('')}
+        ${info.hiddenAbility ? `<div class="ability">${info.hiddenAbility} (Hidden)</div>` : ''}
+      </div>
+
+      <div class="footer">
+        <span>#${String(info.id).padStart(3, '0')}</span>
+        <span>${heightM}m • ${weightKg}kg • BST ${info.bst}</span>
+      </div>
+
+      <div class="buttons">
+        <a href="${SITE_URL}/pokemon/${info.id}" class="btn" target="_top">View Details</a>
+        <a href="${SITE_URL}/team-builder?add=${info.id}" class="btn secondary" target="_top">Add to Team</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html;charset=UTF-8',
+        'Cache-Control': 'public, max-age=3600',
+        'X-Frame-Options': 'ALLOW-FROM https://twitter.com',
       },
     }
   );
@@ -268,6 +564,11 @@ async function handlePokemonRoute(id, context) {
     description,
     image: ARTWORK_URL(info.id),
     url: `${SITE_URL}/pokemon/${id}`,
+    // Twitter player card for interactive embed
+    twitterCard: 'player',
+    playerUrl: `${SITE_URL}/embed/pokemon/${id}`,
+    playerWidth: '480',
+    playerHeight: '600',
   });
 }
 
@@ -313,15 +614,33 @@ function handleDefault(path) {
 
 export async function onRequest(context) {
   const { request } = context;
-
-  // Only intercept GET requests from crawlers
-  if (request.method !== 'GET' || !isCrawler(request)) {
-    return context.next();
-  }
-
   const url = new URL(request.url);
   const path = url.pathname;
   let match;
+
+  // /embed/pokemon/:id - Twitter player card (serve to everyone, not just crawlers)
+  match = path.match(/^\/embed\/pokemon\/(\d+)$/);
+  if (match && request.method === 'GET') {
+    const id = parseInt(match[1], 10);
+    const info = await fetchPokemonInfo(id);
+    if (!info) {
+      return new Response('Pokemon not found', { status: 404 });
+    }
+
+    // Track embed view
+    logAnalytics(context, {
+      event: 'embed_view',
+      pokemon_id: id,
+      pokemon_name: info.name,
+    });
+
+    return buildEmbedHtml(info);
+  }
+
+  // Only intercept other GET requests from crawlers
+  if (request.method !== 'GET' || !isCrawler(request)) {
+    return context.next();
+  }
 
   // Log all crawler requests
   logAnalytics(context, {
