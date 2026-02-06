@@ -159,23 +159,24 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                           ),
                         ),
                       ),
-                  // Soft glow behind Pokemon - subtle and elegant
-                  Center(
-                    child: Container(
-                      width: 180,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.12),
-                            Colors.white.withOpacity(0.04),
-                            Colors.transparent,
-                          ],
+                  // Soft glow behind Pokemon - only for larger cards
+                  if (scale >= 0.3)
+                    Center(
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.12),
+                              Colors.white.withOpacity(0.04),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   // Pokemon card-style header for showcase layout
                   if (useShowcaseLayout && widget.bst != null)
                     Positioned(
@@ -297,9 +298,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                   // Pokemon image - fills entire card with Hero animation
                   Padding(
                     padding: useTinyText
-                        ? const EdgeInsets.all(4)
+                        ? const EdgeInsets.all(2) // Minimal padding for tiny icons
                         : useCompactText
-                            ? const EdgeInsets.all(8)
+                            ? const EdgeInsets.all(6)
                             : useShowcaseLayout
                                 ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
                                 : const EdgeInsets.all(16),
