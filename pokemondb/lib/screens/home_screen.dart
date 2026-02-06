@@ -334,8 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       surfaceTintColor: Colors.transparent,
                       flexibleSpace: FlexibleSpaceBar(
                         background: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Title row

@@ -847,25 +847,6 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // View mode slider (also available on home screen)
-                _sectionLabel(context, Icons.view_module_rounded, 'VIEW MODE'),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(Icons.view_list_rounded, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
-                    Expanded(
-                      child: Slider(
-                        value: appState.cardScale,
-                        min: 0.2,
-                        max: 1.3,
-                        onChanged: (value) => appState.setCardScale(value),
-                      ),
-                    ),
-                    Icon(Icons.view_module_rounded, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
                 // Light section
                 _sectionLabel(context, Icons.light_mode_rounded, 'LIGHT'),
                 const SizedBox(height: 10),
