@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/game.dart';
 import '../services/pokeapi_service.dart';
+import '../widgets/pokemon_image.dart';
 
 class PokedexDetailScreen extends StatefulWidget {
   final String pokedexName;
@@ -227,14 +228,8 @@ class _PokemonCardState extends State<_PokemonCard> {
                 const SizedBox(height: 8),
                 // Pokemon sprite
                 Expanded(
-                  child: Image.network(
-                    'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${widget.entry.pokemonId}.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.catching_pokemon,
-                      size: 48,
-                      color: theme.colorScheme.onSurface.withOpacity(0.3),
-                    ),
+                  child: PokemonImage.sprite(widget.entry.pokemonId,
+                    fallbackIconSize: 48,
                   ),
                 ),
                 const SizedBox(height: 8),

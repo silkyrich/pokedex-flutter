@@ -11,6 +11,7 @@ import '../services/app_state.dart';
 import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
 import '../widgets/pokemon_image.dart';
+import '../widgets/pixel_art_showcase.dart';
 import '../utils/type_colors.dart';
 
 class PokemonDetailScreen extends StatefulWidget {
@@ -491,18 +492,29 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: typeColor.withOpacity(isDark ? 0.15 : 0.1)),
       ),
-      child: Center(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: PokemonImage(
-            key: ValueKey(p.id),
-            imageUrl: p.imageUrl,
-            width: 220,
-            height: 220,
-            fallbackIconSize: 100,
-            fallbackIconColor: typeColor.withOpacity(0.3),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Official artwork
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: PokemonImage(
+              key: ValueKey(p.id),
+              imageUrl: p.imageUrl,
+              width: 220,
+              height: 220,
+              fallbackIconSize: 100,
+              fallbackIconColor: typeColor.withOpacity(0.3),
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          // Pixel sprite showcase — integer scaling with display mode selector
+          PixelArtShowcase(
+            pokemonId: p.id,
+            typeColor: typeColor,
+            isDark: isDark,
+          ),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/breeding.dart';
 import '../services/pokeapi_service.dart';
+import '../widgets/pokemon_image.dart';
 
 class EggGroupDetailScreen extends StatefulWidget {
   final String eggGroupName;
@@ -210,14 +211,8 @@ class _PokemonSpeciesCardState extends State<_PokemonSpeciesCard> {
               children: [
                 // Pokemon sprite
                 Expanded(
-                  child: Image.network(
-                    'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${widget.species.id}.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.catching_pokemon,
-                      size: 48,
-                      color: theme.colorScheme.onSurface.withOpacity(0.3),
-                    ),
+                  child: PokemonImage.sprite(widget.species.id,
+                    fallbackIconSize: 48,
                   ),
                 ),
                 const SizedBox(height: 8),

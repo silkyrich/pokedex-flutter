@@ -5,6 +5,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
+import '../widgets/pokemon_image.dart';
 
 /// Nuzlocke tracker with route encounters, death log, and rules.
 class NuzlockeScreen extends StatefulWidget {
@@ -133,8 +134,7 @@ class _NuzlockeScreenState extends State<NuzlockeScreen> {
                             final p = _searchResults[i];
                             return ListTile(
                               dense: true,
-                              leading: Image.network(p.spriteUrl, width: 28, height: 28,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 20)),
+                              leading: PokemonImage(imageUrl: p.spriteUrl, width: 28, height: 28, fallbackIconSize: 20),
                               title: Text(p.displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                               onTap: () {
                                 _selectPokemon(p).then((_) => setDialogState(() {}));
@@ -147,8 +147,7 @@ class _NuzlockeScreenState extends State<NuzlockeScreen> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Image.network(_selectedPokemon!.spriteUrl, width: 48, height: 48,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 32)),
+                          PokemonImage(imageUrl: _selectedPokemon!.spriteUrl, width: 48, height: 48, fallbackIconSize: 32),
                           const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

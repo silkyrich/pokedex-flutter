@@ -5,7 +5,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
-import '../widgets/transparent_pokemon_image.dart';
+import '../widgets/pokemon_image.dart';
 
 /// "What beats this?" quick lookup.
 /// Tap a Pokemon, instantly get type counters and best team answers.
@@ -231,8 +231,7 @@ class _CounterScreenState extends State<CounterScreen> {
                     final p = _searchResults[i];
                     return ListTile(
                       dense: true,
-                      leading: Image.network(p.spriteUrl, width: 32, height: 32,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24)),
+                      leading: PokemonImage(imageUrl: p.spriteUrl, width: 32, height: 32, fallbackIconSize: 24),
                       title: Text(p.displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       subtitle: Text(p.idString, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4))),
                       onTap: () {
@@ -270,14 +269,12 @@ class _CounterScreenState extends State<CounterScreen> {
               color: typeColor.withOpacity(isDark ? 0.15 : 0.08),
               shape: BoxShape.circle,
             ),
-            child: AppState().transparentBackgrounds
-                ? TransparentPokemonImage(
+            child: PokemonImage(
                     imageUrl: p.imageUrl,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withOpacity(0.3)),
-                  )
-                : Image.network(p.imageUrl, fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withOpacity(0.3))),
+                    fallbackIconSize: 40,
+                    fallbackIconColor: typeColor.withOpacity(0.3),
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -467,15 +464,10 @@ class _CounterScreenState extends State<CounterScreen> {
                       decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
                     ),
                     const SizedBox(width: 10),
-                    AppState().transparentBackgrounds
-                        ? TransparentPokemonImage(
+                    PokemonImage(
                             imageUrl: tc.pokemon.imageUrl,
                             width: 40, height: 40,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28),
-                          )
-                        : Image.network(
-                            tc.pokemon.imageUrl, width: 40, height: 40,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28),
+                            fallbackIconSize: 28,
                           ),
                     const SizedBox(width: 10),
                     Expanded(

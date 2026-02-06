@@ -97,16 +97,18 @@ class ImageProcessor {
   }
 
   /// Pure pixel-processing function that runs in an isolate.
-  /// Removes white/near-white backgrounds and trims transparent margins.
+  /// Removes white/near-white background pixels while preserving the
+  /// original canvas dimensions so relative Pokemon sizes are maintained.
   static _ProcessingOutput? _processPixels(_ProcessingInput input) {
     final pixels = input.pixels;
     final width = input.width;
     final height = input.height;
     const int whiteThreshold = 230;
     const int alphaThreshold = 10;
-    const int margin = 2;
 
-    // Step 1: Remove white/near-white background pixels.
+    bool hasContent = false;
+
+    // Remove white/near-white background pixels.
     // Use a soft fade so edges don't look harsh.
     for (int i = 0; i < pixels.length; i += 4) {
       final r = pixels[i];
@@ -116,10 +118,10 @@ class ImageProcessor {
 
       if (a == 0) continue; // Already transparent
 
-      final avg = (r + g + b) ~/ 3;
       // Check if pixel is near-white (all channels above threshold)
       if (r >= whiteThreshold && g >= whiteThreshold && b >= whiteThreshold) {
         // Smoothly fade: the whiter it is, the more transparent it becomes
+        final avg = (r + g + b) ~/ 3;
         final whiteness = avg / 255.0;
         // Map whiteness from [threshold/255..1] to alpha [original..0]
         final t = ((whiteness - whiteThreshold / 255.0) /
@@ -128,47 +130,18 @@ class ImageProcessor {
         final newAlpha = (a * (1.0 - t)).round().clamp(0, 255);
         pixels[i + 3] = newAlpha;
       }
-    }
 
-    // Step 2: Find bounding box of non-transparent pixels
-    int minX = width, minY = height, maxX = 0, maxY = 0;
-    bool hasContent = false;
-
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        final idx = (y * width + x) * 4;
-        if (pixels[idx + 3] > alphaThreshold) {
-          hasContent = true;
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-        }
-      }
+      if (pixels[i + 3] > alphaThreshold) hasContent = true;
     }
 
     if (!hasContent) return null;
 
-    // Step 3: Crop to bounding box with a small margin
-    minX = (minX - margin).clamp(0, width - 1);
-    minY = (minY - margin).clamp(0, height - 1);
-    maxX = (maxX + margin).clamp(0, width - 1);
-    maxY = (maxY + margin).clamp(0, height - 1);
-
-    final cropWidth = maxX - minX + 1;
-    final cropHeight = maxY - minY + 1;
-    final cropped = Uint8List(cropWidth * cropHeight * 4);
-
-    for (int y = 0; y < cropHeight; y++) {
-      final srcStart = ((minY + y) * width + minX) * 4;
-      final dstStart = y * cropWidth * 4;
-      cropped.setRange(dstStart, dstStart + cropWidth * 4, pixels, srcStart);
-    }
-
+    // Return the full canvas — no cropping — so relative Pokemon sizes
+    // are preserved across all artwork.
     return _ProcessingOutput(
-      pixels: cropped,
-      width: cropWidth,
-      height: cropHeight,
+      pixels: pixels,
+      width: width,
+      height: height,
     );
   }
 

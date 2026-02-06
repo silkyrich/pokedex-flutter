@@ -6,7 +6,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
-import '../widgets/transparent_pokemon_image.dart';
+import '../widgets/pokemon_image.dart';
 
 /// Pokemon stat calculator with EV/IV/Nature inputs.
 /// Calculates actual stats at levels 50 and 100.
@@ -218,8 +218,7 @@ class _StatCalculatorScreenState extends State<StatCalculatorScreen> {
                     final p = _searchResults[i];
                     return ListTile(
                       dense: true,
-                      leading: Image.network(p.spriteUrl, width: 32, height: 32,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24)),
+                      leading: PokemonImage(imageUrl: p.spriteUrl, width: 32, height: 32, fallbackIconSize: 24),
                       title: Text(p.displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       subtitle: Text(p.idString, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4))),
                       onTap: () {
@@ -246,14 +245,10 @@ class _StatCalculatorScreenState extends State<StatCalculatorScreen> {
                         color: TypeColors.getColor(_pokemon!.types.first.name).withOpacity(isDark ? 0.15 : 0.08),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: AppState().transparentBackgrounds
-                          ? TransparentPokemonImage(
+                      child: PokemonImage(
                               imageUrl: _pokemon!.imageUrl,
                               fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 40),
-                            )
-                          : Image.network(_pokemon!.imageUrl, fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 40)),
+                            ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

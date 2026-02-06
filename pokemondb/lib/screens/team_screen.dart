@@ -5,7 +5,7 @@ import '../services/app_state.dart';
 import '../services/pokeapi_service.dart';
 import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
-import '../widgets/transparent_pokemon_image.dart';
+import '../widgets/pokemon_image.dart';
 import '../utils/type_colors.dart';
 
 // Curated list of strong Pokemon for suggestions (competitive viable mons)
@@ -547,10 +547,8 @@ class _TeamScreenState extends State<TeamScreen> {
                                     .withOpacity(isDark ? 0.15 : 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Image.network(
-                                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.pokemon.id}.png',
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24),
+                              child: PokemonImage.sprite(s.pokemon.id,
+                                fallbackIconSize: 24,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -808,14 +806,11 @@ class _TeamMemberCardState extends State<_TeamMemberCard> {
             color: TypeColors.getColor(widget.pokemon.types.first.name).withOpacity(widget.isDark ? 0.15 : 0.08),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: AppState().transparentBackgrounds
-              ? TransparentPokemonImage(
+          child: PokemonImage(
                   imageUrl: widget.pokemon.imageUrl,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36),
-                )
-              : Image.network(widget.pokemon.imageUrl, fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36)),
+                  fallbackIconSize: 36,
+                ),
         ),
         const SizedBox(width: 16),
         SizedBox(
@@ -856,10 +851,8 @@ class _TeamMemberCardState extends State<_TeamMemberCard> {
             color: TypeColors.getColor(widget.pokemon.types.first.name).withOpacity(widget.isDark ? 0.15 : 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Image.network(
-            'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${widget.pokemon.id}.png',
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28),
+          child: PokemonImage.sprite(widget.pokemon.id,
+            fallbackIconSize: 28,
           ),
         ),
         const SizedBox(width: 12),

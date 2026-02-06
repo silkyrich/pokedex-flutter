@@ -7,7 +7,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
-import '../widgets/transparent_pokemon_image.dart';
+import '../widgets/pokemon_image.dart';
 
 /// Showdown-style damage calculator.
 /// Uses Gen V+ damage formula with STAB, type effectiveness, crits.
@@ -328,8 +328,7 @@ class _DamageCalculatorScreenState extends State<DamageCalculatorScreen> {
                   shrinkWrap: true, itemCount: results.length,
                   itemBuilder: (_, i) => ListTile(
                     dense: true,
-                    leading: Image.network(results[i].spriteUrl, width: 28, height: 28,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 20)),
+                    leading: PokemonImage(imageUrl: results[i].spriteUrl, width: 28, height: 28, fallbackIconSize: 20),
                     title: Text(results[i].displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                     onTap: () => _loadPokemon(slot, results[i].id),
                   ),
@@ -340,14 +339,11 @@ class _DamageCalculatorScreenState extends State<DamageCalculatorScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  AppState().transparentBackgrounds
-                      ? TransparentPokemonImage(
+                  PokemonImage(
                           imageUrl: pokemon.imageUrl,
                           width: 56, height: 56,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36),
-                        )
-                      : Image.network(pokemon.imageUrl, width: 56, height: 56,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36)),
+                          fallbackIconSize: 36,
+                        ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
