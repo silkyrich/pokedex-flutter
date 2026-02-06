@@ -216,10 +216,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final bst = d?.stats.values.fold<int>(0, (sum, v) => sum + v) ?? 0;
+      final abilities = d?.abilities.map((a) => a.name).toList();
       _entries.add(_PokemonEntry(
         basic: PokemonBasic(id: id, name: d?.name ?? 'pokemon-$id', url: ''),
         types: types,
         bst: bst,
+        stats: d?.stats,
+        abilities: abilities,
       ));
     }
 
@@ -599,6 +602,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   pokemon: entry.basic,
                                   types: entry.types,
                                   bst: entry.bst,
+                                  stats: entry.stats,
+                                  abilities: entry.abilities,
                                   onTap: () => context.go('/pokemon/${entry.basic.id}'),
                                 );
                               },
@@ -667,8 +672,16 @@ class _PokemonEntry {
   final PokemonBasic basic;
   final List<String>? types;
   final int bst;
+  final Map<String, int>? stats;
+  final List<String>? abilities;
 
-  _PokemonEntry({required this.basic, this.types, this.bst = 0});
+  _PokemonEntry({
+    required this.basic,
+    this.types,
+    this.bst = 0,
+    this.stats,
+    this.abilities,
+  });
 }
 
 class _ActiveFilter {
