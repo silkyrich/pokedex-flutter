@@ -263,7 +263,9 @@ class _HomeScreenState extends State<HomeScreen> {
             : screenWidth > 600
                 ? 4
                 : 3;
-    final crossAxisCount = (baseColumns / AppState().cardScale).round().clamp(2, 15);
+    // Prevent division by zero - use scale of 0.5 minimum for grid calculations
+    final gridScale = AppState().cardScale < 0.2 ? 0.5 : AppState().cardScale;
+    final crossAxisCount = (baseColumns / gridScale).round().clamp(2, 15);
 
     return Scaffold(
       body: _loading
