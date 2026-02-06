@@ -125,38 +125,40 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Smooth blended type-colored background
-                  if (_secondaryColor != null)
-                    // Dual type - smooth diagonal gradient blend
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            _primaryColor,
-                            Color.lerp(_primaryColor, _secondaryColor!, 0.5)!,
-                            _secondaryColor!,
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
+                  // Type-colored background - fades in as scale increases (0.1 → 0.3)
+                  // At tiniest sizes (< 0.1), pure white/neutral for icon clarity
+                  if (scale >= 0.08)
+                    if (_secondaryColor != null)
+                      // Dual type - smooth diagonal gradient blend
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              _primaryColor.withOpacity(scale < 0.3 ? (scale - 0.08) / 0.22 * 0.8 : 1.0),
+                              Color.lerp(_primaryColor, _secondaryColor!, 0.5)!.withOpacity(scale < 0.3 ? (scale - 0.08) / 0.22 * 0.8 : 1.0),
+                              _secondaryColor!.withOpacity(scale < 0.3 ? (scale - 0.08) / 0.22 * 0.8 : 1.0),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      )
+                    else
+                      // Single type - smooth radial gradient
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: Alignment.topLeft,
+                            radius: 1.5,
+                            colors: [
+                              _primaryColor.withOpacity(scale < 0.3 ? (scale - 0.08) / 0.22 * 0.6 : 0.7),
+                              _primaryColor.withOpacity(scale < 0.3 ? (scale - 0.08) / 0.22 * 0.8 : 1.0),
+                              _primaryColor.withOpacity(scale < 0.3 ? (scale - 0.08) / 0.22 * 0.7 : 0.9),
+                            ],
+                          ),
                         ),
                       ),
-                    )
-                  else
-                    // Single type - smooth radial gradient
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.topLeft,
-                          radius: 1.5,
-                          colors: [
-                            _primaryColor.withOpacity(0.7),
-                            _primaryColor,
-                            _primaryColor.withOpacity(0.9),
-                          ],
-                        ),
-                      ),
-                    ),
                   // Soft glow behind Pokemon - subtle and elegant
                   Center(
                     child: Container(
