@@ -257,288 +257,197 @@ function buildEmbedHtml(info) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
-      background: #1a1a1a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+      background: #2a2a2a;
+      padding: 12px;
     }
 
-    /* Pokemon Card Container */
-    .pokemon-card {
-      width: 520px;
-      height: 730px;
+    /* Simple Pokemon Card */
+    .card {
       background: linear-gradient(135deg, #f4e5a8 0%, #e8d284 100%);
-      border-radius: 20px;
-      padding: 8px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.3);
-      position: relative;
-      overflow: hidden;
+      border-radius: 16px;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
-    /* Holographic shine effect */
-    .pokemon-card::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(45deg,
-        transparent 30%,
-        rgba(255,255,255,0.1) 40%,
-        rgba(255,255,255,0.3) 50%,
-        rgba(255,255,255,0.1) 60%,
-        transparent 70%);
-      animation: shine 8s infinite;
-      pointer-events: none;
-    }
-
-    @keyframes shine {
-      0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
-      50% { transform: translate(50%, 50%) rotate(180deg); }
-    }
-
-    /* Card body */
-    .card-body {
+    .card-inner {
       background: #f5f0e8;
-      height: 100%;
-      border-radius: 14px;
-      padding: 20px;
-      position: relative;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      padding: 16px;
     }
 
-    /* Header with name and HP */
-    .card-header {
+    /* Header */
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
-    .pokemon-name {
-      font-size: 32px;
+    .name {
+      font-size: 28px;
       font-weight: bold;
       color: #333;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
-    .hp-display {
+    .hp {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 28px;
+      gap: 4px;
+      font-size: 24px;
       font-weight: bold;
       color: #d32f2f;
     }
 
-    .hp-label {
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    /* Evolution stage */
-    .evolution-stage {
-      font-size: 13px;
+    .stage {
+      font-size: 12px;
       color: #666;
-      margin-bottom: 12px;
-      font-weight: 600;
-    }
-
-    /* Type badges */
-    .type-line {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .type-badge {
-      padding: 4px 12px;
-      border-radius: 12px;
-      color: white;
-      font-size: 13px;
-      font-weight: bold;
-      text-transform: uppercase;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    /* Artwork frame */
-    .artwork-frame {
-      background: linear-gradient(135deg, ${primaryColor}20, ${primaryColor}10);
-      border: 3px solid ${primaryColor}40;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      position: relative;
-      height: 280px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .artwork-frame::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.2) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
-    .artwork-frame img {
-      width: 95%;
-      height: auto;
-      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
-      position: relative;
-      z-index: 1;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-    }
-
-    /* Stats section (styled like Pokemon card moves) */
-    .stats-section {
-      background: white;
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      padding: 14px;
       margin-bottom: 10px;
     }
 
-    .stat-row {
+    /* Types */
+    .types {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      border-bottom: 1px solid #eee;
+      gap: 6px;
+      margin-bottom: 10px;
     }
 
-    .stat-row:last-child { border-bottom: none; }
+    .type {
+      padding: 4px 10px;
+      border-radius: 10px;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* Artwork */
+    .artwork {
+      background: linear-gradient(135deg, ${primaryColor}20, ${primaryColor}10);
+      border: 2px solid ${primaryColor}40;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      text-align: center;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .artwork img {
+      max-width: 90%;
+      max-height: 90%;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    }
+
+    /* Stats */
+    .stats {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+      gap: 8px;
+    }
 
     .stat-name {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: bold;
       color: #555;
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      font-size: 20px;
-      font-weight: bold;
-      color: ${primaryColor};
+      min-width: 40px;
     }
 
     .stat-bar {
       flex: 1;
-      margin: 0 12px;
-      height: 6px;
+      height: 5px;
       background: #eee;
       border-radius: 3px;
       overflow: hidden;
-      position: relative;
     }
 
-    .stat-bar-fill {
+    .stat-fill {
       height: 100%;
-      background: linear-gradient(90deg, ${primaryColor}, ${primaryColor}dd);
-      border-radius: 3px;
+      background: ${primaryColor};
     }
 
-    /* Abilities section */
-    .abilities-section {
+    .stat-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: ${primaryColor};
+      min-width: 35px;
+      text-align: right;
+    }
+
+    /* Abilities */
+    .abilities {
       background: white;
       border: 2px solid #ddd;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 10px;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
     }
 
     .abilities-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: bold;
       color: #999;
       text-transform: uppercase;
-      margin-bottom: 8px;
-      letter-spacing: 0.5px;
-    }
-
-    .ability-item {
-      font-size: 13px;
-      color: #333;
-      font-weight: 600;
-      padding: 6px 10px;
-      background: ${primaryColor}15;
-      border-left: 3px solid ${primaryColor};
-      border-radius: 4px;
       margin-bottom: 6px;
     }
 
-    .ability-item:last-child { margin-bottom: 0; }
-
-    .ability-hidden {
-      opacity: 0.7;
-      border-left-color: #999;
+    .ability {
+      font-size: 11px;
+      color: #333;
+      font-weight: 600;
+      padding: 5px 8px;
+      background: ${primaryColor}15;
+      border-left: 3px solid ${primaryColor};
+      border-radius: 3px;
+      margin-bottom: 4px;
     }
 
-    /* Card footer */
-    .card-footer {
+    .ability:last-child { margin-bottom: 0; }
+
+    /* Footer */
+    .footer {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding-top: 8px;
-      font-size: 11px;
+      font-size: 10px;
       color: #666;
+      padding-top: 6px;
     }
 
-    .card-number {
-      font-weight: bold;
-    }
+    .footer span { font-weight: 600; }
 
-    .card-info {
-      font-weight: 600;
-    }
-
-    /* Interactive buttons */
-    .cta-buttons {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      right: 12px;
+    /* Buttons */
+    .buttons {
       display: flex;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity 0.3s;
+      gap: 6px;
+      margin-top: 10px;
     }
 
-    .pokemon-card:hover .cta-buttons {
-      opacity: 1;
-    }
-
-    .cta-btn {
+    .btn {
       flex: 1;
-      padding: 12px;
+      padding: 10px;
       background: ${primaryColor};
       color: white;
       text-decoration: none;
       text-align: center;
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: bold;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: all 0.2s;
+      display: block;
     }
 
-    .cta-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-    }
-
-    .cta-btn.secondary {
+    .btn.secondary {
       background: white;
       color: ${primaryColor};
       border: 2px solid ${primaryColor};
@@ -546,66 +455,55 @@ function buildEmbedHtml(info) {
   </style>
 </head>
 <body>
-  <div class="pokemon-card">
-    <div class="card-body">
-      <!-- Header: Name and HP -->
-      <div class="card-header">
-        <div class="pokemon-name">${info.name}</div>
-        <div class="hp-display">
-          <span class="hp-label">HP</span>
-          <span>${info.stats.hp}</span>
-        </div>
+  <div class="card">
+    <div class="card-inner">
+      <div class="header">
+        <div class="name">${info.name}</div>
+        <div class="hp"><span style="font-size:18px">HP</span> ${info.stats.hp}</div>
       </div>
 
-      <!-- Evolution stage -->
-      <div class="evolution-stage">Basic Pokémon</div>
+      <div class="stage">Basic Pokémon</div>
 
-      <!-- Type badges (clickable to filter by type) -->
-      <div class="type-line">
-        ${info.types.map(t => `<a href="${SITE_URL}/?type=${t.toLowerCase()}" target="_top" class="type-badge" style="background: ${typeColors[t.toLowerCase()] || '#777'}; text-decoration: none;">${t}</a>`).join('')}
+      <div class="types">
+        ${info.types.map(t => `<a href="${SITE_URL}/?type=${t.toLowerCase()}" target="_top" class="type" style="background: ${typeColors[t.toLowerCase()] || '#777'}">${t}</a>`).join('')}
       </div>
 
-      <!-- Artwork -->
-      <div class="artwork-frame">
+      <div class="artwork">
         <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${info.id}.png" alt="${info.name}">
       </div>
 
-      <!-- Stats (styled like card moves) -->
-      <div class="stats-section">
-        <div class="stat-row">
+      <div class="stats">
+        <div class="stat">
           <span class="stat-name">ATK</span>
-          <div class="stat-bar"><div class="stat-bar-fill" style="width: ${(info.stats.attack / 255) * 100}%"></div></div>
+          <div class="stat-bar"><div class="stat-fill" style="width: ${(info.stats.attack / 255) * 100}%"></div></div>
           <span class="stat-value">${info.stats.attack}</span>
         </div>
-        <div class="stat-row">
+        <div class="stat">
           <span class="stat-name">DEF</span>
-          <div class="stat-bar"><div class="stat-bar-fill" style="width: ${(info.stats.defense / 255) * 100}%"></div></div>
+          <div class="stat-bar"><div class="stat-fill" style="width: ${(info.stats.defense / 255) * 100}%"></div></div>
           <span class="stat-value">${info.stats.defense}</span>
         </div>
-        <div class="stat-row">
+        <div class="stat">
           <span class="stat-name">SPD</span>
-          <div class="stat-bar"><div class="stat-bar-fill" style="width: ${(info.stats.speed / 255) * 100}%"></div></div>
+          <div class="stat-bar"><div class="stat-fill" style="width: ${(info.stats.speed / 255) * 100}%"></div></div>
           <span class="stat-value">${info.stats.speed}</span>
         </div>
       </div>
 
-      <!-- Abilities -->
-      <div class="abilities-section">
+      <div class="abilities">
         <div class="abilities-title">Abilities</div>
-        ${info.abilities.map(a => `<div class="ability-item">${a}</div>`).join('')}
-        ${info.hiddenAbility ? `<div class="ability-item ability-hidden">${info.hiddenAbility} (Hidden)</div>` : ''}
+        ${info.abilities.map(a => `<div class="ability">${a}</div>`).join('')}
+        ${info.hiddenAbility ? `<div class="ability">${info.hiddenAbility} (Hidden)</div>` : ''}
       </div>
 
-      <!-- Card footer -->
-      <div class="card-footer">
-        <span class="card-number">#${String(info.id).padStart(3, '0')}</span>
-        <span class="card-info">${heightM}m • ${weightKg}kg • BST ${info.bst}</span>
+      <div class="footer">
+        <span>#${String(info.id).padStart(3, '0')}</span>
+        <span>${heightM}m • ${weightKg}kg • BST ${info.bst}</span>
       </div>
 
-      <!-- Interactive buttons (show on hover) -->
-      <div class="cta-buttons">
-        <a href="${SITE_URL}/pokemon/${info.id}" class="cta-btn" target="_top">View Full Entry</a>
-        <a href="${SITE_URL}/team-builder?add=${info.id}" class="cta-btn secondary" target="_top">Add to Team</a>
+      <div class="buttons">
+        <a href="${SITE_URL}/pokemon/${info.id}" class="btn" target="_top">View Details</a>
+        <a href="${SITE_URL}/team-builder?add=${info.id}" class="btn secondary" target="_top">Add to Team</a>
       </div>
     </div>
   </div>
