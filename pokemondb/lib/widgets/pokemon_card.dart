@@ -183,6 +183,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                   Positioned(
                     top: 8,
                     left: 8,
+                    right: 50, // Leave space for ID badge
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -247,48 +248,47 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       bottom: 8,
                       left: 8,
                       right: 8,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
                         children: widget.types!.map((t) {
                           final typeColor = TypeColors.getColor(t);
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    typeColor.withOpacity(0.85),
-                                    typeColor.withOpacity(0.7),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: typeColor.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    spreadRadius: 0,
-                                  ),
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  typeColor.withOpacity(0.85),
+                                  typeColor.withOpacity(0.7),
                                 ],
                               ),
-                              child: Text(
-                                t[0].toUpperCase() + t.substring(1),
-                                style: TextStyle(
-                                  color: TypeColors.getTextColor(t),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: typeColor.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  spreadRadius: 0,
                                 ),
+                              ],
+                            ),
+                            child: Text(
+                              t[0].toUpperCase() + t.substring(1),
+                              style: TextStyle(
+                                color: TypeColors.getTextColor(t),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 2,
+                                  ),
+                                ],
                               ),
                             ),
                           );

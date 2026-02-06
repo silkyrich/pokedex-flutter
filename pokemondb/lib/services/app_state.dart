@@ -51,13 +51,14 @@ class AppState extends ChangeNotifier {
   bool _useArtwork = true; // Default to HD artwork
   bool get useArtwork => _useArtwork;
 
-  // Card size scale — controls how large Pokemon cards appear (0.2 = list, 0.7 = default grid, 1.3 = large)
+  // Card size scale — continuous zoom from 0 to 1
+  // 0.0 = list, 0.0-0.2 = growing list to sprites, 0.2-0.5 = sprite cards, 0.5-1.0 = artwork cards, 1.0 = full screen
   double _cardScale = 0.7;
   double get cardScale => _cardScale;
 
   // View mode derived from scale
-  bool get isListView => _cardScale < 0.35;
-  bool get usePixelSprites => _cardScale < 0.6 && !isListView;
+  bool get isListView => _cardScale < 0.2;
+  bool get usePixelSprites => _cardScale >= 0.2 && _cardScale < 0.5;
 
   // Favorites
   final Set<int> _favorites = {};
@@ -130,7 +131,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> setCardScale(double scale) async {
-    _cardScale = scale.clamp(0.2, 1.3);
+    _cardScale = scale.clamp(0.0, 1.0);
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('card_scale', _cardScale);

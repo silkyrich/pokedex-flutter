@@ -402,42 +402,50 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(fontSize: 15),
                               ),
                               const SizedBox(height: 12),
-                              // View mode toggle buttons
+                              // Continuous zoom slider (0 = list, 0.2 = sprites, 0.5+ = artwork, 1 = full screen)
                               ListenableBuilder(
                                 listenable: AppState(),
                                 builder: (context, _) {
                                   final scale = AppState().cardScale;
-                                  final isListView = scale < 0.35;
-                                  final isSpriteView = scale >= 0.35 && scale < 0.65;
-                                  final isDrawingView = scale >= 0.65;
-
-                                  return Row(
+                                  String viewMode = scale < 0.15
+                                      ? 'List'
+                                      : scale < 0.45
+                                          ? 'Sprites'
+                                          : scale < 0.75
+                                              ? 'Cards'
+                                              : 'Large';
+                                  return Column(
                                     children: [
-                                      Expanded(
-                                        child: _ViewModeButton(
-                                          icon: Icons.view_list_rounded,
-                                          label: 'List',
-                                          isSelected: isListView,
-                                          onTap: () => AppState().setCardScale(0.25),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _ViewModeButton(
-                                          icon: Icons.grid_on,
-                                          label: 'Sprite',
-                                          isSelected: isSpriteView,
-                                          onTap: () => AppState().setCardScale(0.5),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _ViewModeButton(
-                                          icon: Icons.image_outlined,
-                                          label: 'Drawing',
-                                          isSelected: isDrawingView,
-                                          onTap: () => AppState().setCardScale(0.7),
-                                        ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.view_list_rounded,
+                                            size: 16,
+                                            color: colorScheme.onSurface.withOpacity(0.4),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            viewMode,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: colorScheme.onSurface.withOpacity(0.6),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Slider(
+                                              value: scale,
+                                              min: 0.0,
+                                              max: 1.0,
+                                              onChanged: (value) => AppState().setCardScale(value),
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.fullscreen_rounded,
+                                            size: 16,
+                                            color: colorScheme.onSurface.withOpacity(0.4),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   );
