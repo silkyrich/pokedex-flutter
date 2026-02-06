@@ -306,33 +306,43 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
 
-                  // Pokemon image - minimal padding to maximize sprite size
+                  // Pokemon image - normalized sizing with minimal padding
                   Padding(
-                    padding: scale < 0.3
-                        ? EdgeInsets.zero // NO padding at tiny/small - sprite fills space!
-                        : scale < 0.6
-                            ? const EdgeInsets.all(4)  // Minimal padding for mid-sizes
-                            : useShowcaseLayout
-                                ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
-                                : const EdgeInsets.all(12),  // Less padding than before
+                    padding: scale < 0.2
+                        ? const EdgeInsets.all(2) // Tiny padding to prevent clipping
+                        : scale < 0.4
+                            ? const EdgeInsets.all(6)  // Small padding
+                            : scale < 0.6
+                                ? const EdgeInsets.all(8)  // Medium padding
+                                : useShowcaseLayout
+                                    ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Showcase artwork
+                                    : const EdgeInsets.all(14),  // Standard padding
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
-                      child: Transform.scale(
-                        // Aggressive sprite scaling to fill space and reduce whitespace
-                        // Tiny: 1.8x (big sprites!), Medium: 1.2x, Large: 1.0x
-                        scale: scale < 0.3
-                            ? 1.8 - (scale / 0.3) * 0.6  // 1.8 → 1.2 as scale goes 0.0 → 0.3
-                            : scale < 0.6
-                                ? 1.2 - ((scale - 0.3) / 0.3) * 0.2  // 1.2 → 1.0 as scale goes 0.3 → 0.6
-                                : 1.0,  // 1.0 at large scales
+                      child: Container(
+                        // Normalize sprite sizes with drop shadow for better visibility
+                        decoration: BoxDecoration(
+                          // Subtle drop shadow to make sprites pop
+                          boxShadow: scale >= 0.2 ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: scale < 0.4 ? 4 : 8,
+                              offset: Offset(0, scale < 0.4 ? 2 : 3),
+                            ),
+                          ] : null,
+                        ),
                         child: Image.network(
                           AppState().usePixelSprites
                               ? widget.pokemon.spriteUrl
                               : widget.pokemon.imageUrl,
+                          // Cover fits the entire space, normalizing different sprite sizes
                           fit: BoxFit.contain,
+                          // Crisp pixel art rendering
                           filterQuality: AppState().usePixelSprites
                               ? FilterQuality.none
-                              : FilterQuality.high,
+                              : FilterQuality.medium,
+                          // Prevent texture bleeding
+                          isAntiAlias: false,
                           errorBuilder: (_, __, ___) => Icon(
                             Icons.catching_pokemon,
                             size: useTinyText ? 20 : useCompactText ? 40 : 60,
@@ -649,8 +659,16 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
               padding: const EdgeInsets.all(8),
               child: Hero(
                 tag: 'pokemon-sprite-${widget.pokemon.id}',
-                child: Transform.scale(
-                  scale: 1.3,  // Scale sprite in horizontal layout
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Image.network(
                     AppState().usePixelSprites
                         ? widget.pokemon.spriteUrl
@@ -658,7 +676,8 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                     fit: BoxFit.contain,
                     filterQuality: AppState().usePixelSprites
                         ? FilterQuality.none
-                        : FilterQuality.high,
+                        : FilterQuality.medium,
+                    isAntiAlias: false,
                   ),
                 ),
               ),
