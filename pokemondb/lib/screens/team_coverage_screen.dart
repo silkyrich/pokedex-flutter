@@ -5,6 +5,7 @@ import '../services/pokeapi_service.dart';
 import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
+import '../widgets/pokemon_image.dart';
 
 class TeamCoverageScreen extends StatefulWidget {
   const TeamCoverageScreen({super.key});
@@ -367,11 +368,10 @@ class _TeamMemberChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.network(
-            pokemon.spriteUrl,
+          PokemonImage(
+            imageUrl: pokemon.spriteUrl,
             width: 40,
             height: 40,
-            errorBuilder: (_, __, ___) => const SizedBox(width: 40, height: 40),
           ),
           const SizedBox(width: 8),
           Column(

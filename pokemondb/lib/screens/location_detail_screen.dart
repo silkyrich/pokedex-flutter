@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/location.dart';
 import '../services/pokeapi_service.dart';
+import '../widgets/pokemon_image.dart';
 
 class LocationDetailScreen extends StatefulWidget {
   final String locationName;
@@ -294,15 +295,10 @@ class _PokemonEncounterChipState extends State<_PokemonEncounterChip> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.network(
-                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${widget.encounter.pokemonId}.png',
+              PokemonImage.sprite(widget.encounter.pokemonId,
                 width: 32,
                 height: 32,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.catching_pokemon,
-                  size: 20,
-                  color: widget.theme.colorScheme.onSurface.withOpacity(0.3),
-                ),
+                fallbackIconSize: 20,
               ),
               const SizedBox(width: 8),
               Text(

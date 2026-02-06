@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
 import '../widgets/type_badge.dart';
+import '../widgets/pokemon_image.dart';
 import '../utils/type_colors.dart';
 
 class MoveDetailScreen extends StatefulWidget {
@@ -430,16 +431,13 @@ class _PokemonRefCardState extends State<_PokemonRefCard> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.network(
-                widget.ref.spriteUrl,
+              PokemonImage(
+                imageUrl: widget.ref.spriteUrl,
                 width: 56,
                 height: 56,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.catching_pokemon,
-                  size: 32,
-                  color: theme.colorScheme.onSurface.withOpacity(0.15),
-                ),
+                fallbackIconSize: 32,
+                fallbackIconColor: theme.colorScheme.onSurface.withOpacity(0.15),
               ),
               const SizedBox(height: 4),
               Text(

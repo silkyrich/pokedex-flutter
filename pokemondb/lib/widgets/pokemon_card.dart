@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
 import '../services/app_state.dart';
+import 'pokemon_image.dart';
 
 // Discrete card layout modes for consistent UX
 enum CardLayout {
@@ -356,17 +357,12 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             ),
                           ] : null,
                         ),
-                        child: Image.network(
-                          // Always use official artwork - scales better than sprites
-                          widget.pokemon.imageUrl,
+                        child: PokemonImage(
+                          imageUrl: widget.pokemon.imageUrl,
                           fit: BoxFit.contain,
                           filterQuality: FilterQuality.medium,
                           isAntiAlias: true,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.catching_pokemon,
-                            size: useTinyText ? 20 : useCompactText ? 40 : 60,
-                            color: Colors.white.withOpacity(0.3),
-                          ),
+                          fallbackIconSize: useTinyText ? 20 : useCompactText ? 40 : 60,
                         ),
                       ),
                     ),
@@ -770,9 +766,8 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ],
                   ),
-                  child: Image.network(
-                    // Always use official artwork
-                    widget.pokemon.imageUrl,
+                  child: PokemonImage(
+                    imageUrl: widget.pokemon.imageUrl,
                     fit: BoxFit.contain,
                     filterQuality: FilterQuality.medium,
                     isAntiAlias: true,

@@ -4,6 +4,7 @@ import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
 import '../services/pokeapi_service.dart';
 import '../models/pokemon.dart';
+import '../widgets/pokemon_image.dart';
 
 class TypeMatchupScreen extends StatefulWidget {
   final String attackingType;
@@ -606,14 +607,11 @@ class _PokemonSampleRow extends StatelessWidget {
                               color: typeColor.withOpacity(isDark ? 0.12 : 0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Image.network(
-                              p.spriteUrl,
+                            child: PokemonImage(
+                              imageUrl: p.spriteUrl,
                               width: 48,
                               height: 48,
-                              errorBuilder: (_, __, ___) => Icon(
-                                Icons.catching_pokemon,
-                                color: typeColor.withOpacity(0.3),
-                              ),
+                              fallbackIconColor: typeColor.withOpacity(0.3),
                             ),
                           ),
                           const SizedBox(height: 4),

@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
+import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
+import '../widgets/pokemon_image.dart';
 
 class BattleScreen extends StatefulWidget {
   final int? initialId1;
@@ -368,8 +370,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
                     final p = results[i];
                     return ListTile(
                       dense: true,
-                      leading: Image.network(p.spriteUrl, width: 32, height: 32,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24)),
+                      leading: PokemonImage(imageUrl: p.spriteUrl, width: 32, height: 32),
                       title: Text(p.displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       subtitle: Text(p.idString, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.4))),
                       onTap: () => _selectPokemon(slot, p),
@@ -680,11 +681,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
       children: [
         Row(
           children: [
-            Image.network(
-              attacker.imageUrl,
-              width: 32, height: 32,
-              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24),
-            ),
+            PokemonImage(imageUrl: attacker.imageUrl, width: 32, height: 32),
             const SizedBox(width: 8),
             Text(
               '${attacker.displayName} attacking',
@@ -781,8 +778,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
         children: [
           Row(
             children: [
-              Image.network(pokemon.imageUrl, width: 28, height: 28,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 20)),
+              PokemonImage(imageUrl: pokemon.imageUrl, width: 28, height: 28, fallbackIconSize: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1004,7 +1000,6 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
               child: Row(
                 children: varieties.map((form) {
                   final isActive = pokemon.id == form.id;
-                  final spriteUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${form.id}.png';
                   return Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: GestureDetector(
@@ -1027,8 +1022,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Image.network(spriteUrl, width: 40, height: 40,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28)),
+                              PokemonImage.sprite(form.id, width: 40, height: 40, fallbackIconSize: 28),
                               const SizedBox(height: 2),
                               Text(
                                 form.formLabel,
@@ -1162,8 +1156,6 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
 
   Widget _buildEvoTile(int slot, EvolutionInfo evo, int currentId, Color color, ThemeData theme, bool isDark) {
     final isCurrent = evo.id == currentId;
-    final spriteUrl = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evo.id}.png';
-
     return GestureDetector(
       onTap: isCurrent ? null : () => _switchToEvolution(slot, evo),
       child: MouseRegion(
@@ -1184,8 +1176,7 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.network(spriteUrl, width: 40, height: 40,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28)),
+              PokemonImage.sprite(evo.id, width: 40, height: 40, fallbackIconSize: 28),
               const SizedBox(height: 2),
               Text(
                 evo.displayName,
@@ -1226,11 +1217,12 @@ class _PokemonSlotDisplay extends StatelessWidget {
             ),
             shape: BoxShape.circle,
           ),
-          child: Image.network(
-            pokemon.imageUrl,
+          child: PokemonImage(
+            imageUrl: pokemon.imageUrl,
             width: 100,
             height: 100,
-            errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 48, color: color.withOpacity(0.3)),
+            fallbackIconSize: 48,
+            fallbackIconColor: color.withOpacity(0.3),
           ),
         ),
         const SizedBox(height: 10),
