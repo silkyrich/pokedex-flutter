@@ -327,9 +327,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     SliverAppBar(
                       floating: true,
                       snap: true,
-                      expandedHeight: _filtersExpanded ? null : 140,
-                      collapsedHeight: 140,
-                      toolbarHeight: 140,
+                      expandedHeight: _filtersExpanded ? null : 200,
+                      collapsedHeight: 200,
+                      toolbarHeight: 200,
                       backgroundColor: isDark ? const Color(0xFF121218) : const Color(0xFFF8F9FA),
                       surfaceTintColor: Colors.transparent,
                       flexibleSpace: FlexibleSpaceBar(
