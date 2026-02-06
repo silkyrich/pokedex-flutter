@@ -154,13 +154,14 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
                       child: Image.network(
-                        AppState().useArtwork
-                            ? widget.pokemon.imageUrl
-                            : widget.pokemon.spriteUrl,
+                        // Use pixel sprites for small cards, HD artwork for normal/large
+                        AppState().usePixelSprites
+                            ? widget.pokemon.spriteUrl
+                            : widget.pokemon.imageUrl,
                         fit: BoxFit.contain,
-                        filterQuality: AppState().useArtwork
-                            ? FilterQuality.high
-                            : FilterQuality.none,
+                        filterQuality: AppState().usePixelSprites
+                            ? FilterQuality.none
+                            : FilterQuality.high,
                         errorBuilder: (_, __, ___) => Icon(
                           Icons.catching_pokemon,
                           size: 60,

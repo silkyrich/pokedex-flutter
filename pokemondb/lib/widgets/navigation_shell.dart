@@ -847,27 +847,29 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Card size slider (also available on home screen)
-                _sectionLabel(context, Icons.photo_size_select_large_outlined, 'CARD SIZE'),
+                // View mode slider (also available on home screen)
+                _sectionLabel(context, Icons.view_module_rounded, 'VIEW MODE'),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.zoom_out, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
+                    Icon(Icons.view_list_rounded, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
                     Expanded(
                       child: Slider(
                         value: appState.cardScale,
-                        min: 0.7,
+                        min: 0.2,
                         max: 1.3,
-                        divisions: 12,
-                        label: appState.cardScale == 1.0
-                            ? 'Default'
-                            : appState.cardScale < 1.0
-                                ? 'Smaller'
-                                : 'Larger',
+                        divisions: 22,
+                        label: appState.cardScale < 0.35
+                            ? 'List'
+                            : appState.cardScale < 0.6
+                                ? 'Compact'
+                                : appState.cardScale < 0.9
+                                    ? 'Normal'
+                                    : 'Large',
                         onChanged: (value) => appState.setCardScale(value),
                       ),
                     ),
-                    Icon(Icons.zoom_in, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
+                    Icon(Icons.view_module_rounded, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
                   ],
                 ),
                 const SizedBox(height: 20),

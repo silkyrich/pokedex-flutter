@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
@@ -400,41 +401,51 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(fontSize: 15),
                               ),
                               const SizedBox(height: 12),
-                              // Card size slider
+                              // View mode slider (list ← → grid)
                               ListenableBuilder(
                                 listenable: AppState(),
-                                builder: (context, _) => Row(
-                                  children: [
-                                    Icon(
-                                      Icons.photo_size_select_large_outlined,
-                                      size: 16,
-                                      color: colorScheme.onSurface.withOpacity(0.4),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Card size',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: colorScheme.onSurface.withOpacity(0.5),
-                                        fontWeight: FontWeight.w500,
+                                builder: (context, _) {
+                                  final scale = AppState().cardScale;
+                                  String viewMode = scale < 0.35
+                                      ? 'List'
+                                      : scale < 0.6
+                                          ? 'Compact'
+                                          : scale < 0.9
+                                              ? 'Normal'
+                                              : 'Large';
+                                  return Row(
+                                    children: [
+                                      Icon(
+                                        Icons.view_list_rounded,
+                                        size: 16,
+                                        color: colorScheme.onSurface.withOpacity(0.4),
                                       ),
-                                    ),
-                                    Expanded(
-                                      child: Slider(
-                                        value: AppState().cardScale,
-                                        min: 0.7,
-                                        max: 1.3,
-                                        divisions: 12,
-                                        onChanged: (value) => AppState().setCardScale(value),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        viewMode,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: colorScheme.onSurface.withOpacity(0.6),
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                    ),
-                                    Icon(
-                                      Icons.view_module_rounded,
-                                      size: 16,
-                                      color: colorScheme.onSurface.withOpacity(0.4),
-                                    ),
-                                  ],
-                                ),
+                                      Expanded(
+                                        child: Slider(
+                                          value: scale,
+                                          min: 0.2,
+                                          max: 1.3,
+                                          divisions: 22,
+                                          onChanged: (value) => AppState().setCardScale(value),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.view_module_rounded,
+                                        size: 16,
+                                        color: colorScheme.onSurface.withOpacity(0.4),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                               const SizedBox(height: 12),
                               // Filter bar
@@ -531,28 +542,47 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     else ...[
-                      SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                sliver: SliverGrid(
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: crossAxisCount,
-                                    childAspectRatio: 0.85, // Increased from 0.78 to make cards shorter/more compact
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                  ),
-                                  delegate: SliverChildBuilderDelegate(
-                                    (context, index) {
-                                      final entry = _filteredEntries[index];
-                                      return PokemonCard(
-                                        pokemon: entry.basic,
-                                        types: entry.types,
-                                        onTap: () => context.go('/pokemon/${entry.basic.id}'),
-                                      );
-                                    },
-                                    childCount: _filteredEntries.length,
-                                  ),
-                                ),
-                              ),
+                      // List view (compact)
+                      if (AppState().isListView)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final entry = _filteredEntries[index];
+                                return _PokemonListTile(
+                                  entry: entry,
+                                  onTap: () => context.go('/pokemon/${entry.basic.id}'),
+                                );
+                              },
+                              childCount: _filteredEntries.length,
+                            ),
+                          ),
+                        )
+                      // Grid view (cards)
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              childAspectRatio: 0.85,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final entry = _filteredEntries[index];
+                                return PokemonCard(
+                                  pokemon: entry.basic,
+                                  types: entry.types,
+                                  onTap: () => context.go('/pokemon/${entry.basic.id}'),
+                                );
+                              },
+                              childCount: _filteredEntries.length,
+                            ),
+                          ),
+                        ),
                               SliverToBoxAdapter(
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 24),
@@ -1077,6 +1107,123 @@ class _TypeChip extends StatelessWidget {
                   color: selected ? textColor : isDark ? typeColor : typeColor.withOpacity(0.9),
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- List tile for compact list view ---
+
+class _PokemonListTile extends StatelessWidget {
+  final _PokemonEntry entry;
+  final VoidCallback onTap;
+
+  const _PokemonListTile({required this.entry, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryType = entry.types?.first;
+    final typeColor = primaryType != null ? TypeColors.getColor(primaryType) : Colors.grey;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade200,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // ID
+              SizedBox(
+                width: 50,
+                child: Text(
+                  entry.basic.idString,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFeatureSettings: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              // Sprite
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Image.network(
+                  entry.basic.spriteUrl,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.none,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.catching_pokemon,
+                    size: 24,
+                    color: theme.colorScheme.onSurface.withOpacity(0.2),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Name
+              Expanded(
+                child: Text(
+                  entry.basic.displayName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              // Types
+              if (entry.types != null) ...[
+                const SizedBox(width: 12),
+                ...entry.types!.map((t) => Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: TypeColors.getColor(t).withOpacity(isDark ? 0.25 : 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          t[0].toUpperCase() + t.substring(1),
+                          style: TextStyle(
+                            color: isDark
+                                ? TypeColors.getColor(t).withOpacity(0.9)
+                                : TypeColors.getColor(t),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    )),
+              ],
+              // BST
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 50,
+                child: Text(
+                  '${entry.bst}',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFeatureSettings: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ],
