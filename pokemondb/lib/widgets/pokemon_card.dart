@@ -60,6 +60,11 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final cardScale = AppState().cardScale;
+    // Determine information density based on card size
+    final bool showIdBadge = cardScale >= 0.3; // Hide ID at very small sizes
+    final bool useCompactText = cardScale < 0.4; // Use smaller text for sprites
+    final bool showFullTypeBadges = cardScale >= 0.35; // Simplify type badges when very small
 
     return MouseRegion(
       onEnter: (_) {
@@ -79,7 +84,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E1E2A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20), // Softer, more joyful corners
               border: Border.all(
                 color: _hovered
                     ? _primaryColor.withOpacity(0.5)
@@ -105,7 +110,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                     ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(19), // Match outer radius
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -158,9 +163,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
                   ),
-                  // Pokemon image - fills entire card
+                  // Pokemon image - fills entire card with Hero animation
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(useCompactText ? 8 : 16),
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
                       child: Image.network(
@@ -173,7 +178,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             : FilterQuality.high,
                         errorBuilder: (_, __, ___) => Icon(
                           Icons.catching_pokemon,
-                          size: 60,
+                          size: useCompactText ? 40 : 60,
                           color: Colors.white.withOpacity(0.3),
                         ),
                       ),
@@ -181,34 +186,39 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                   ),
                   // Name in top-left with type-colored background
                   Positioned(
-                    top: 8,
-                    left: 8,
-                    right: 50, // Leave space for ID badge
+                    top: useCompactText ? 4 : 8,
+                    left: useCompactText ? 4 : 8,
+                    right: showIdBadge ? (useCompactText ? 40 : 50) : 4, // Leave space for ID badge if shown
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: useCompactText ? 6 : 10,
+                        vertical: useCompactText ? 3 : 5,
+                      ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.black.withOpacity(0.4),
-                            Colors.black.withOpacity(0.3),
+                            Colors.black.withOpacity(0.7), // Stronger background for better contrast
+                            Colors.black.withOpacity(0.6),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(useCompactText ? 6 : 10),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
                         ),
                       ),
                       child: Text(
                         widget.pokemon.displayName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800, // Bolder
+                          fontSize: useCompactText ? 10 : 13, // Slightly larger
                           color: Colors.white,
-                          shadows: [
+                          letterSpacing: 0.3,
+                          shadows: const [
                             Shadow(
                               color: Colors.black,
-                              blurRadius: 4,
+                              blurRadius: 6,
+                              offset: Offset(0, 1),
                             ),
                           ],
                         ),
@@ -217,61 +227,84 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
                   ),
-                  // ID badge - top right corner
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.15),
-                          width: 1,
+                  // ID badge - top right corner (hidden at very small sizes)
+                  if (showIdBadge)
+                    Positioned(
+                      top: useCompactText ? 4 : 8,
+                      right: useCompactText ? 4 : 8,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: useCompactText ? 4 : 5,
+                          vertical: useCompactText ? 1 : 2,
                         ),
-                      ),
-                      child: Text(
-                        widget.pokemon.idString,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.2), // More subtle
+                          borderRadius: BorderRadius.circular(useCompactText ? 4 : 5),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Text(
+                          widget.pokemon.idString,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5), // More discrete
+                            fontSize: useCompactText ? 6 : 8, // Smaller
+                            fontWeight: FontWeight.w500, // Less heavy
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // Type badges - bottom with blended type colors
+                  // Type badges - bottom with blended type colors (adaptive sizing)
                   if (widget.types != null && widget.types!.isNotEmpty)
                     Positioned(
-                      bottom: 8,
-                      left: 8,
-                      right: 8,
+                      bottom: useCompactText ? 4 : 8,
+                      left: useCompactText ? 4 : 8,
+                      right: useCompactText ? 4 : 8,
                       child: Wrap(
                         alignment: WrapAlignment.center,
-                        spacing: 6,
-                        runSpacing: 4,
+                        spacing: useCompactText ? 3 : 6,
+                        runSpacing: useCompactText ? 2 : 4,
                         children: widget.types!.map((t) {
                           final typeColor = TypeColors.getColor(t);
+                          // At very small sizes, show just colored dots
+                          if (!showFullTypeBadges) {
+                            return Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: typeColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.5),
+                                  width: 1,
+                                ),
+                              ),
+                            );
+                          }
+                          // Full badges for larger sizes
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: useCompactText ? 7 : 12, // Slightly larger
+                              vertical: useCompactText ? 3 : 5,
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  typeColor.withOpacity(0.85),
-                                  typeColor.withOpacity(0.7),
+                                  typeColor.withOpacity(0.9), // More solid
+                                  typeColor.withOpacity(0.8),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(useCompactText ? 8 : 14),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 1.5,
+                                color: Colors.white.withOpacity(0.4), // Stronger border
+                                width: useCompactText ? 1 : 2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: typeColor.withOpacity(0.3),
-                                  blurRadius: 8,
+                                  color: typeColor.withOpacity(0.4),
+                                  blurRadius: useCompactText ? 6 : 10,
                                   spreadRadius: 0,
                                 ),
                               ],
@@ -280,13 +313,13 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                               t[0].toUpperCase() + t.substring(1),
                               style: TextStyle(
                                 color: TypeColors.getTextColor(t),
-                                fontSize: 10,
+                                fontSize: useCompactText ? 9 : 11, // Slightly larger text
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
+                                letterSpacing: useCompactText ? 0.4 : 0.6,
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 2,
+                                    color: Colors.black.withOpacity(0.4),
+                                    blurRadius: 3,
                                   ),
                                 ],
                               ),

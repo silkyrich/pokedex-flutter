@@ -267,6 +267,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final gridScale = AppState().cardScale < 0.2 ? 0.5 : AppState().cardScale;
     final crossAxisCount = (baseColumns / gridScale).round().clamp(2, 15);
 
+    // Adjust aspect ratio based on scale - squares for small sprites, rectangles for larger cards
+    final aspectRatio = AppState().cardScale < 0.4
+        ? 1.0  // Square for tiny sprites
+        : AppState().cardScale < 0.6
+            ? 0.95 // Nearly square for medium sprites
+            : 0.85; // Standard card ratio for artwork
+
     return Scaffold(
       body: _loading
           ? Center(
@@ -409,9 +416,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 listenable: AppState(),
                                 builder: (context, _) {
                                   final scale = AppState().cardScale;
-                                  String viewMode = scale < 0.15
+                                  // Align labels with actual behavior thresholds
+                                  String viewMode = scale < 0.2
                                       ? 'List'
-                                      : scale < 0.45
+                                      : scale < 0.5
                                           ? 'Sprites'
                                           : scale < 0.75
                                               ? 'Cards'
@@ -572,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           sliver: SliverGrid(
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: crossAxisCount,
-                              childAspectRatio: 0.85,
+                              childAspectRatio: aspectRatio,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                             ),
