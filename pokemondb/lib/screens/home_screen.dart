@@ -263,16 +263,33 @@ class _HomeScreenState extends State<HomeScreen> {
             : screenWidth > 600
                 ? 4
                 : 3;
-    // Prevent division by zero - use scale of 0.5 minimum for grid calculations
-    final gridScale = AppState().cardScale < 0.2 ? 0.5 : AppState().cardScale;
-    final crossAxisCount = (baseColumns / gridScale).round().clamp(2, 15);
+    // Continuous zoom: dynamic columns and aspect ratio based on scale
+    final scale = AppState().cardScale;
 
-    // Adjust aspect ratio based on scale - squares for small sprites, rectangles for larger cards
-    final aspectRatio = AppState().cardScale < 0.4
-        ? 1.0  // Square for tiny sprites
-        : AppState().cardScale < 0.6
-            ? 0.95 // Nearly square for medium sprites
-            : 0.85; // Standard card ratio for artwork
+    // Column count: 20 at tiny, 2-3 at huge
+    final crossAxisCount = scale < 0.2
+        ? (baseColumns / 0.15).round().clamp(15, 25)  // Tiny: 15-20+ columns
+        : scale < 0.4
+            ? (baseColumns / 0.3).round().clamp(10, 15)  // Small: 10-12 columns
+            : scale < 0.6
+                ? (baseColumns / 0.5).round().clamp(6, 10)  // Medium: 6-8 columns
+                : scale < 0.8
+                    ? (baseColumns / 0.7).round().clamp(4, 6)  // Large: 4-5 columns
+                    : (baseColumns / 1.0).round().clamp(2, 4);  // Huge: 2-3 columns
+
+    // Aspect ratio: smooth progression from square to tall showcase
+    final aspectRatio = scale < 0.2
+        ? 1.0  // Square icons
+        : scale < 0.4
+            ? 0.95  // Nearly square
+            : scale < 0.6
+                ? 0.90  // Slight rectangle
+                : scale < 0.8
+                    ? 0.85  // Standard card
+                    : 0.75;  // Tall showcase
+
+    // Spacing: tighter at small sizes, generous at large
+    final spacing = scale < 0.2 ? 6.0 : scale < 0.4 ? 10.0 : scale < 0.6 ? 14.0 : scale < 0.8 ? 16.0 : 20.0;
 
     return Scaffold(
       body: _loading
@@ -411,19 +428,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(fontSize: 15),
                               ),
                               const SizedBox(height: 12),
-                              // Continuous zoom slider (0 = list, 0.2 = sprites, 0.5+ = artwork, 1 = full screen)
+                              // Continuous zoom slider - smooth scale from tiny icons to huge showcase
                               ListenableBuilder(
                                 listenable: AppState(),
                                 builder: (context, _) {
                                   final scale = AppState().cardScale;
-                                  // Align labels with actual behavior thresholds
-                                  String viewMode = scale < 0.2
-                                      ? 'List'
-                                      : scale < 0.5
-                                          ? 'Sprites'
-                                          : scale < 0.75
-                                              ? 'Cards'
-                                              : 'Large';
+                                  // Descriptive labels for zoom level
+                                  String viewMode = scale < 0.15
+                                      ? 'Tiny'
+                                      : scale < 0.35
+                                          ? 'Small'
+                                          : scale < 0.55
+                                              ? 'Medium'
+                                              : scale < 0.75
+                                                  ? 'Large'
+                                                  : 'Huge';
                                   return Column(
                                     children: [
                                       Row(
@@ -556,34 +575,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     else ...[
-                      // List view (compact)
-                      if (AppState().isListView)
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          sliver: SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final entry = _filteredEntries[index];
-                                return _PokemonListTile(
-                                  entry: entry,
-                                  onTap: () => context.go('/pokemon/${entry.basic.id}'),
-                                );
-                              },
-                              childCount: _filteredEntries.length,
-                            ),
+                      // Continuous zoom: always cards, scale dynamically
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        sliver: SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            childAspectRatio: aspectRatio,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
                           ),
-                        )
-                      // Grid view (cards)
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          sliver: SliverGrid(
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              childAspectRatio: aspectRatio,
-                              crossAxisSpacing: 16, // More breathing room
-                              mainAxisSpacing: 16,
-                            ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final entry = _filteredEntries[index];
@@ -1207,117 +1208,4 @@ class _ViewModeButton extends StatelessWidget {
 
 // --- List tile for compact list view ---
 
-class _PokemonListTile extends StatelessWidget {
-  final _PokemonEntry entry;
-  final VoidCallback onTap;
-
-  const _PokemonListTile({required this.entry, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaryType = entry.types?.first;
-    final typeColor = primaryType != null ? TypeColors.getColor(primaryType) : Colors.grey;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade200,
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              // ID
-              SizedBox(
-                width: 50,
-                child: Text(
-                  entry.basic.idString,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.4),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-              // Sprite
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: Image.network(
-                  entry.basic.spriteUrl,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.none,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.catching_pokemon,
-                    size: 24,
-                    color: theme.colorScheme.onSurface.withOpacity(0.2),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Name
-              Expanded(
-                child: Text(
-                  entry.basic.displayName,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              // Types
-              if (entry.types != null) ...[
-                const SizedBox(width: 12),
-                ...entry.types!.map((t) => Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: TypeColors.getColor(t).withOpacity(isDark ? 0.25 : 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          t[0].toUpperCase() + t.substring(1),
-                          style: TextStyle(
-                            color: isDark
-                                ? TypeColors.getColor(t).withOpacity(0.9)
-                                : TypeColors.getColor(t),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    )),
-              ],
-              // BST
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 50,
-                child: Text(
-                  '${entry.bst}',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+// Removed _PokemonListTile - now using continuous zoom with PokemonCard at all scales

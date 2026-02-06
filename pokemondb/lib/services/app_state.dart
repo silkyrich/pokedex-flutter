@@ -56,9 +56,8 @@ class AppState extends ChangeNotifier {
   double _cardScale = 0.7;
   double get cardScale => _cardScale;
 
-  // View mode derived from scale
-  bool get isListView => _cardScale < 0.2;
-  bool get usePixelSprites => _cardScale >= 0.2 && _cardScale < 0.5;
+  // View mode derived from scale - continuous zoom, no separate list view
+  bool get usePixelSprites => _cardScale < 0.5; // Use sprites for tiny/small, artwork for large
 
   // Favorites
   final Set<int> _favorites = {};
