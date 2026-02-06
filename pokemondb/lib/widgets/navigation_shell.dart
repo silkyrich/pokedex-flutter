@@ -858,14 +858,6 @@ class _ThemePickerSheet extends StatelessWidget {
                         value: appState.cardScale,
                         min: 0.2,
                         max: 1.3,
-                        divisions: 22,
-                        label: appState.cardScale < 0.35
-                            ? 'List'
-                            : appState.cardScale < 0.6
-                                ? 'Compact'
-                                : appState.cardScale < 0.9
-                                    ? 'Normal'
-                                    : 'Large',
                         onChanged: (value) => appState.setCardScale(value),
                       ),
                     ),

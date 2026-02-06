@@ -434,7 +434,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                           value: scale,
                                           min: 0.2,
                                           max: 1.3,
-                                          divisions: 22,
                                           onChanged: (value) => AppState().setCardScale(value),
                                         ),
                                       ),
