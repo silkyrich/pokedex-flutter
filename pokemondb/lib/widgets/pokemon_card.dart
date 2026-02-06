@@ -273,13 +273,13 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
 
-                  // Showcase: Artwork frame (like real cards)
+                  // Showcase: Artwork frame (like real cards) - larger without stats section
                   if (useShowcaseLayout)
                     Positioned(
                       top: 60,
                       left: 12,
                       right: 12,
-                      bottom: 160,
+                      bottom: 65, // More space for artwork
                       child: Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFFAF0), // Light cream for artwork area
@@ -299,7 +299,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         : useCompactText
                             ? const EdgeInsets.all(8)
                             : useShowcaseLayout
-                                ? const EdgeInsets.fromLTRB(24, 72, 24, 170)
+                                ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
                                 : const EdgeInsets.all(16),
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
@@ -319,8 +319,8 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
                   ),
-                  // Name - progressive sizing from tiny to large (hidden in showcase layout)
-                  if (showNameBox && !useShowcaseLayout)
+                  // Name - progressive sizing (hidden in tiny mode and showcase layout)
+                  if (showNameBox && !useShowcaseLayout && !showTinyDots)
                     Positioned(
                       top: useTinyText ? 2 : useCompactText ? 4 : 8,
                       left: useTinyText ? 2 : useCompactText ? 4 : 8,
@@ -401,108 +401,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                       ),
                     ),
-                  // Showcase: Info section (like moves section on real cards)
-                  if (useShowcaseLayout && widget.bst != null)
-                    Positioned(
-                      bottom: 65,
-                      left: 12,
-                      right: 12,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8DC), // Cream color like real cards
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFFD4AF37).withOpacity(0.4),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Power indicator (styled like an attack)
-                            Row(
-                              children: [
-                                // Type energy icon
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: _primaryColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // "Attack" name
-                                Expanded(
-                                  child: Text(
-                                    'Base Power',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 14,
-                                      color: Colors.grey.shade800,
-                                    ),
-                                  ),
-                                ),
-                                // Damage number
-                                Text(
-                                  '${widget.bst}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 18,
-                                    color: Colors.grey.shade900,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            // Description (like attack description)
-                            Text(
-                              'Total of all base stats combined.',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade700,
-                                height: 1.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // Showcase: Decorative line separator (like real cards)
-                  if (useShowcaseLayout)
-                    Positioned(
-                      bottom: 52,
-                      left: 16,
-                      right: 16,
-                      child: Container(
-                        height: 2,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              _primaryColor.withOpacity(0.3),
-                              _primaryColor.withOpacity(0.8),
-                              _secondaryColor?.withOpacity(0.8) ?? _primaryColor.withOpacity(0.8),
-                              (_secondaryColor ?? _primaryColor).withOpacity(0.3),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
+                  // Removed boring stats section - artwork gets full space now!
 
                   // Showcase: Pokemon card-style bottom info section
                   if (useShowcaseLayout)
@@ -544,8 +443,8 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
 
-                  // Type indicators - progressive: dots → pills → badges
-                  if (widget.types != null && widget.types!.isNotEmpty)
+                  // Type indicators - progressive: dots → pills → badges (hidden in tiny mode - just pure sprites)
+                  if (widget.types != null && widget.types!.isNotEmpty && scale >= 0.15)
                     Positioned(
                       bottom: useShowcaseLayout ? 16 : useTinyText ? 2 : useCompactText ? 4 : 8,
                       left: useShowcaseLayout ? null : (useTinyText ? 2 : useCompactText ? 4 : 8),
