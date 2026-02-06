@@ -136,6 +136,8 @@ async function fetchPokemonInfo(id) {
     const data = await resp.json();
 
     let displayName = formatPokemonName(data.name);
+    let flavorText = null;
+    let genus = null;
     try {
       const speciesResp = await fetch(data.species.url, {
         cf: { cacheTtl: 604800, cacheEverything: true },
@@ -144,6 +146,19 @@ async function fetchPokemonInfo(id) {
         const species = await speciesResp.json();
         const en = species.names?.find((n) => n.language.name === 'en');
         if (en) displayName = en.name;
+        // Grab the genus (e.g. "Worm Pokémon")
+        const genusEntry = species.genera?.find((g) => g.language.name === 'en');
+        if (genusEntry) genus = genusEntry.genus;
+        // Grab a flavor text — prefer recent English entries
+        const flavorEntries = (species.flavor_text_entries || [])
+          .filter((f) => f.language.name === 'en');
+        if (flavorEntries.length > 0) {
+          // Pick the last entry (most recent game) and clean up whitespace
+          flavorText = flavorEntries[flavorEntries.length - 1].flavor_text
+            .replace(/[\n\r\f]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
       }
     } catch {
       // Fall back to formatted API name
@@ -174,6 +189,8 @@ async function fetchPokemonInfo(id) {
       hiddenAbility: hiddenAbility ? formatPokemonName(hiddenAbility.ability.name) : null,
       height: data.height,
       weight: data.weight,
+      flavorText,
+      genus,
     };
   } catch {
     return null;
@@ -549,26 +566,27 @@ async function handlePokemonRoute(id, context) {
   });
 
   const typeStr = info.types.join(' / ');
-  const heightM = (info.height / 10).toFixed(1);
-  const weightKg = (info.weight / 10).toFixed(1);
 
-  // Rich description with stats and abilities
-  const description =
-    `${info.name} • ${typeStr} type\n` +
-    `HP ${info.stats.hp} • ATK ${info.stats.attack} • DEF ${info.stats.defense} • BST ${info.bst}\n` +
-    `Abilities: ${info.abilities.join(', ')}${info.hiddenAbility ? ` • Hidden: ${info.hiddenAbility}` : ''}\n` +
-    `${heightM}m tall, ${weightKg}kg`;
+  // Lead with the Pokedex flavor text — that's the hook.
+  // Fall back to a compact stat summary if flavor text is unavailable.
+  let description;
+  if (info.flavorText) {
+    const genusLine = info.genus ? `The ${info.genus}. ` : '';
+    description = `${genusLine}${info.flavorText} — ${typeStr} type, BST ${info.bst}.`;
+  } else {
+    const heightM = (info.height / 10).toFixed(1);
+    const weightKg = (info.weight / 10).toFixed(1);
+    description =
+      `${typeStr} type · BST ${info.bst} · ${heightM}m · ${weightKg}kg. ` +
+      `Stats, moves, matchups, and more on DexGuide.`;
+  }
 
   return buildOgHtml({
     title: `${info.name} #${padId(info.id)} — ${SITE_NAME}`,
     description,
     image: ARTWORK_URL(info.id),
     url: `${SITE_URL}/pokemon/${id}`,
-    // Twitter player card for interactive embed
-    twitterCard: 'player',
-    playerUrl: `${SITE_URL}/embed/pokemon/${id}`,
-    playerWidth: '480',
-    playerHeight: '600',
+    twitterCard: 'summary_large_image',
   });
 }
 
