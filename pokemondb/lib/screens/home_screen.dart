@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
-import '../models/move.dart';
 import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../widgets/pokemon_card.dart';
@@ -156,21 +155,31 @@ class _HomeScreenState extends State<HomeScreen> {
       final range = _genRanges[_selectedGen]!;
       _total = range[1] - range[0] + 1;
 
-      if (_needsFullLoad) {
-        // Load everything before sorting so the order is correct
-        while (_offset < _total) {
-          await _loadBatch(range);
-          // Show progress for large loads
-          if (mounted && _entries.length % 100 == 0) setState(() {});
-        }
-      } else {
-        await _loadBatch(range);
-      }
-
+      // Always load first batch immediately
+      await _loadBatch(range);
       _sortEntries();
+
       if (mounted) setState(() => _loading = false);
+
+      // Stream in the rest in the background
+      if (_offset < _total) {
+        _loadRemainingInBackground(range);
+      }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = e.toString(); });
+    }
+  }
+
+  Future<void> _loadRemainingInBackground(List<int> range) async {
+    while (_offset < _total && mounted) {
+      try {
+        await _loadBatch(range);
+        _sortEntries();
+        if (mounted) setState(() {}); // Update UI with new entries
+      } catch (e) {
+        // Silently fail background loads, don't disrupt UX
+        break;
+      }
     }
   }
 
@@ -510,45 +519,46 @@ class _HomeScreenState extends State<HomeScreen> {
                               SliverToBoxAdapter(
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 24),
-                                  child: _loadingMore
+                                  child: _offset >= _total && _filteredEntries.isNotEmpty
                                       ? Center(
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                width: 20, height: 20,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: colorScheme.primary,
-                                                ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.primary.withOpacity(0.05),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              _searchQuery.isNotEmpty
+                                                  ? '${_filteredEntries.length} results'
+                                                  : 'All ${_filteredEntries.length} Pokemon loaded',
+                                              style: TextStyle(
+                                                color: colorScheme.onSurface.withOpacity(0.4),
+                                                fontWeight: FontWeight.w500,
                                               ),
-                                              const SizedBox(width: 12),
-                                              Text(
-                                                'Loading more...',
-                                                style: TextStyle(
-                                                  color: colorScheme.onSurface.withOpacity(0.4),
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
                                         )
-                                      : _offset >= _total && _filteredEntries.isNotEmpty
+                                      : _offset < _total
                                           ? Center(
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme.primary.withOpacity(0.05),
-                                                  borderRadius: BorderRadius.circular(20),
-                                                ),
-                                                child: Text(
-                                                  _searchQuery.isNotEmpty
-                                                      ? '${_filteredEntries.length} results'
-                                                      : 'All ${_filteredEntries.length} Pokemon loaded',
-                                                  style: TextStyle(
-                                                    color: colorScheme.onSurface.withOpacity(0.4),
-                                                    fontWeight: FontWeight.w500,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 16, height: 16,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: colorScheme.primary.withOpacity(0.5),
+                                                    ),
                                                   ),
-                                                ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    'Loading ${_entries.length}/$_total...',
+                                                    style: TextStyle(
+                                                      color: colorScheme.onSurface.withOpacity(0.3),
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             )
                                           : const SizedBox.shrink(),
