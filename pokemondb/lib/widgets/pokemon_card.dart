@@ -3,6 +3,24 @@ import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
 import '../services/app_state.dart';
 
+// Discrete card layout modes for consistent UX
+enum CardLayout {
+  tiny,      // 0.0-0.25: Icon grid, just sprite
+  compact,   // 0.25-0.5: Small horizontal card, sprite + name + types
+  standard,  // 0.5-0.75: Medium vertical card, more details
+  large,     // 0.75-0.9: Large vertical card
+  showcase,  // 0.9-1.0: Pokemon card style
+}
+
+// Map scale value to discrete card layout
+CardLayout _getCardLayout(double scale) {
+  if (scale < 0.25) return CardLayout.tiny;
+  if (scale < 0.5) return CardLayout.compact;
+  if (scale < 0.75) return CardLayout.standard;
+  if (scale < 0.9) return CardLayout.large;
+  return CardLayout.showcase;
+}
+
 class PokemonCard extends StatefulWidget {
   final PokemonBasic pokemon;
   final List<String>? types;
@@ -64,16 +82,19 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
     final isDark = theme.brightness == Brightness.dark;
     final scale = AppState().cardScale;
 
-    // Progressive information density for continuous zoom
-    final bool showTinyDots = scale < 0.2;  // Just colored dots for types
-    final bool showSmallPills = scale >= 0.2 && scale < 0.35;  // Tiny type pills
-    final bool showCompactBadges = scale >= 0.35 && scale < 0.5;  // Compact badges
-    final bool showIdBadge = scale >= 0.35;  // ID appears at medium sizes
-    final bool showNameBox = scale >= 0.15;  // Name in box (vs overlay)
-    final bool useTinyText = scale < 0.2;  // Very small text for tiny icons
-    final bool useCompactText = scale < 0.5;  // Compact text for small/medium
-    final bool useHorizontalLayout = scale >= 0.25 && scale < 0.6;  // Wide horizontal cards at mid-scale
-    final bool useShowcaseLayout = scale >= 0.8;  // Pokemon card-like layout for huge cards
+    // Discrete card layout modes - simple and predictable
+    final CardLayout cardLayout = _getCardLayout(scale);
+
+    // Mode-specific flags
+    final bool showTinyDots = cardLayout == CardLayout.tiny;
+    final bool showSmallPills = cardLayout == CardLayout.compact;
+    final bool showCompactBadges = cardLayout == CardLayout.standard || cardLayout == CardLayout.large;
+    final bool showIdBadge = cardLayout != CardLayout.tiny;
+    final bool showNameBox = cardLayout != CardLayout.tiny;
+    final bool useTinyText = cardLayout == CardLayout.tiny;
+    final bool useCompactText = cardLayout == CardLayout.compact;
+    final bool useHorizontalLayout = cardLayout == CardLayout.compact;
+    final bool useShowcaseLayout = cardLayout == CardLayout.showcase;
 
     final cardWidget = MouseRegion(
       onEnter: (_) {
@@ -332,17 +353,11 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                           ] : null,
                         ),
                         child: Image.network(
-                          AppState().usePixelSprites
-                              ? widget.pokemon.spriteUrl
-                              : widget.pokemon.imageUrl,
-                          // Cover fits the entire space, normalizing different sprite sizes
+                          // Always use official artwork - scales better than sprites
+                          widget.pokemon.imageUrl,
                           fit: BoxFit.contain,
-                          // Crisp pixel art rendering
-                          filterQuality: AppState().usePixelSprites
-                              ? FilterQuality.none
-                              : FilterQuality.medium,
-                          // Prevent texture bleeding
-                          isAntiAlias: false,
+                          filterQuality: FilterQuality.medium,
+                          isAntiAlias: true,
                           errorBuilder: (_, __, ___) => Icon(
                             Icons.catching_pokemon,
                             size: useTinyText ? 20 : useCompactText ? 40 : 60,
@@ -437,15 +452,16 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                   // Removed boring stats section - artwork gets full space now!
 
                   // Showcase: Pokemon card-style bottom info section
-                  if (useShowcaseLayout)
+                  // Showcase: Compact info footer with stats grid and abilities
+                  if (useShowcaseLayout && widget.bst != null)
                     Positioned(
                       bottom: 0,
                       left: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8DC), // Cream color like real cards
+                          color: const Color(0xFFFFF8DC), // Cream color
                           border: const Border(
                             top: BorderSide(
                               color: Color(0xFFD4AF37),
@@ -457,20 +473,68 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             bottomRight: Radius.circular(16),
                           ),
                         ),
-                        child: Row(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Pokedex number - styled like card number
+                            // Types horizontal
+                            if (widget.types != null && widget.types!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 6,
+                                  children: widget.types!.map((type) {
+                                    return TypeBadge(type: type, size: BadgeSize.small);
+                                  }).toList(),
+                                ),
+                              ),
+                            // Stats grid: 2 rows × 3 columns
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildStatCell('HP', '45'),
+                                      _buildStatCell('ATK', '49'),
+                                      _buildStatCell('DEF', '49'),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildStatCell('SPA', '65'),
+                                      _buildStatCell('SPD', '65'),
+                                      _buildStatCell('SPE', '45'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Abilities horizontal
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6, bottom: 4),
+                              child: Text(
+                                'Overgrow • Chlorophyll',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            // ID number
                             Text(
                               widget.pokemon.idString,
                               style: TextStyle(
-                                color: Colors.grey.shade700,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
+                                color: Colors.grey.shade600,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const Spacer(),
-                            // Types will appear here via the existing type badges section
                           ],
                         ),
                       ),
@@ -633,6 +697,32 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
     return cardWidget;
   }
 
+  Widget _buildStatCell(String label, String value) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHorizontalCard(BuildContext context, ThemeData theme, bool isDark, double scale) {
     // Horizontal card layout: sprite on left, info on right
     return Container(
@@ -670,14 +760,11 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                     ],
                   ),
                   child: Image.network(
-                    AppState().usePixelSprites
-                        ? widget.pokemon.spriteUrl
-                        : widget.pokemon.imageUrl,
+                    // Always use official artwork
+                    widget.pokemon.imageUrl,
                     fit: BoxFit.contain,
-                    filterQuality: AppState().usePixelSprites
-                        ? FilterQuality.none
-                        : FilterQuality.medium,
-                    isAntiAlias: false,
+                    filterQuality: FilterQuality.medium,
+                    isAntiAlias: true,
                   ),
                 ),
               ),

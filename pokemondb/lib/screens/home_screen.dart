@@ -263,23 +263,40 @@ class _HomeScreenState extends State<HomeScreen> {
             : screenWidth > 600
                 ? 4
                 : 3;
-    // Continuous zoom: dynamic columns and aspect ratio based on scale
+    // Discrete card layout modes - simple and predictable
     final scale = AppState().cardScale;
 
-    // Column count: smooth decrease as scale increases (more zoom = fewer, larger cards)
-    // Formula: columns = baseColumns * (1 - scale * 0.6) to go from ~8 columns to ~3 columns
-    final crossAxisCount = (baseColumns * (1.2 - scale * 0.7)).round().clamp(2, 10);
+    // Map to discrete layout values based on scale
+    final int crossAxisCount;
+    final double aspectRatio;
+    final double spacing;
 
-    // Aspect ratio: square at tiny → wide for horizontal cards → tall for showcase
-    // 0.0: 1.0 (square), 0.3: 1.8 (wide horizontal), 0.6: 1.0 (square), 1.0: 0.75 (tall)
-    final aspectRatio = scale < 0.3
-        ? 1.0 + (scale / 0.3) * 0.8  // 1.0 → 1.8 (getting wider)
-        : scale < 0.6
-            ? 1.8 - ((scale - 0.3) / 0.3) * 0.8  // 1.8 → 1.0 (getting less wide)
-            : 1.0 - ((scale - 0.6) / 0.4) * 0.25;  // 1.0 → 0.75 (getting tall)
-
-    // Spacing: smooth progression from tight (2px) to generous (20px)
-    final spacing = (2.0 + scale * 18.0).clamp(2.0, 20.0);
+    if (scale < 0.25) {
+      // Tiny: Icon grid
+      crossAxisCount = (baseColumns * 1.5).round().clamp(8, 12);
+      aspectRatio = 1.0;  // Square
+      spacing = 4.0;
+    } else if (scale < 0.5) {
+      // Compact: Small horizontal cards
+      crossAxisCount = (baseColumns * 1.0).round().clamp(5, 8);
+      aspectRatio = 1.6;  // Wide horizontal
+      spacing = 8.0;
+    } else if (scale < 0.75) {
+      // Standard: Medium vertical cards
+      crossAxisCount = (baseColumns * 0.7).round().clamp(4, 6);
+      aspectRatio = 0.85;  // Slightly tall
+      spacing = 12.0;
+    } else if (scale < 0.9) {
+      // Large: Large vertical cards
+      crossAxisCount = (baseColumns * 0.5).round().clamp(3, 4);
+      aspectRatio = 0.8;  // Taller
+      spacing = 16.0;
+    } else {
+      // Showcase: Tall portrait card with stats/abilities
+      crossAxisCount = (baseColumns * 0.4).round().clamp(2, 3);
+      aspectRatio = 0.9;  // Taller to fit stats grid & abilities without crushing
+      spacing = 20.0;
+    }
 
     return Scaffold(
       body: _loading
