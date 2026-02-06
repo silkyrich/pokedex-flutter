@@ -100,104 +100,127 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
             child: ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // Type gradient background at top
+                  // Full card type gradient background
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 1.2,
+                        colors: [
+                          _primaryColor.withOpacity(isDark ? 0.12 : 0.06),
+                          _primaryColor.withOpacity(isDark ? 0.18 : 0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Pokemon image - fills entire card
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Hero(
+                      tag: 'pokemon-sprite-${widget.pokemon.id}',
+                      child: Image.network(
+                        AppState().useArtwork
+                            ? widget.pokemon.imageUrl
+                            : widget.pokemon.spriteUrl,
+                        fit: BoxFit.contain,
+                        filterQuality: AppState().useArtwork
+                            ? FilterQuality.high
+                            : FilterQuality.none,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.catching_pokemon,
+                          size: 60,
+                          color: theme.colorScheme.onSurface.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // ID badge - top left corner
                   Positioned(
-                    top: 0,
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.pokemon.idString,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Name and types - bottom overlay
+                  Positioned(
+                    bottom: 0,
                     left: 0,
                     right: 0,
-                    height: 60,
-                    child: DecoratedBox(
+                    child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            _primaryColor.withOpacity(isDark ? 0.15 : 0.08),
                             Colors.transparent,
+                            Colors.black.withOpacity(0.7),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // ID badge
-                        Text(
-                          widget.pokemon.idString,
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurface.withOpacity(0.35),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // Pokemon image
-                        Expanded(
-                          child: Hero(
-                            tag: 'pokemon-sprite-${widget.pokemon.id}',
-                            child: Image.network(
-                              AppState().useArtwork
-                                  ? widget.pokemon.imageUrl
-                                  : widget.pokemon.spriteUrl,
-                              fit: BoxFit.contain,
-                              filterQuality: AppState().useArtwork
-                                  ? FilterQuality.high
-                                  : FilterQuality.none,
-                              errorBuilder: (_, __, ___) => Icon(
-                                Icons.catching_pokemon,
-                                size: 40,
-                                color: theme.colorScheme.onSurface.withOpacity(0.2),
-                              ),
+                      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.pokemon.displayName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black,
+                                  blurRadius: 4,
+                                ),
+                              ],
                             ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        // Name
-                        Text(
-                          widget.pokemon.displayName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (widget.types != null) ...[
-                          const SizedBox(height: 6),
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: widget.types!.map((t) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: TypeColors.getColor(t).withOpacity(isDark ? 0.3 : 0.15),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  t[0].toUpperCase() + t.substring(1),
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? TypeColors.getColor(t).withOpacity(0.9)
-                                        : TypeColors.getColor(t),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                          if (widget.types != null) ...[
+                            const SizedBox(height: 4),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: widget.types!.map((t) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: TypeColors.getColor(t),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                                  child: Text(
+                                    t[0].toUpperCase() + t.substring(1),
+                                    style: TextStyle(
+                                      color: TypeColors.getTextColor(t),
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ],
