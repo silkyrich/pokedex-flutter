@@ -146,17 +146,17 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                       ),
                     ),
-                  // Soft glow behind Pokemon
+                  // Soft glow behind Pokemon - subtle and elegant
                   Center(
                     child: Container(
-                      width: 160,
-                      height: 160,
+                      width: 180,
+                      height: 180,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.white.withOpacity(0.15),
-                            Colors.white.withOpacity(0.05),
+                            Colors.white.withOpacity(0.12),
+                            Colors.white.withOpacity(0.04),
                             Colors.transparent,
                           ],
                         ),
@@ -197,15 +197,22 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.black.withOpacity(0.7), // Stronger background for better contrast
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withOpacity(0.75), // Strong background for contrast
+                            Colors.black.withOpacity(0.65),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(useCompactText ? 6 : 10),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1.5,
+                          color: Colors.white.withOpacity(0.5), // Brighter border for clarity
+                          width: 2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
                         widget.pokemon.displayName,
