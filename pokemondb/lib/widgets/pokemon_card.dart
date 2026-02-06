@@ -316,18 +316,24 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                                     : const EdgeInsets.all(16),
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
-                      child: Image.network(
-                        AppState().usePixelSprites
-                            ? widget.pokemon.spriteUrl
-                            : widget.pokemon.imageUrl,
-                        fit: BoxFit.contain,
-                        filterQuality: AppState().usePixelSprites
-                            ? FilterQuality.none
-                            : FilterQuality.high,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.catching_pokemon,
-                          size: useTinyText ? 20 : useCompactText ? 40 : 60,
-                          color: Colors.white.withOpacity(0.3),
+                      child: Transform.scale(
+                        // Smooth sprite scaling: 0.6x at tiny → 1.0x at medium → 1.0x at large
+                        scale: scale < 0.3
+                            ? 0.6 + (scale / 0.3) * 0.4  // 0.6 → 1.0 as scale goes 0.0 → 0.3
+                            : 1.0,
+                        child: Image.network(
+                          AppState().usePixelSprites
+                              ? widget.pokemon.spriteUrl
+                              : widget.pokemon.imageUrl,
+                          fit: BoxFit.contain,
+                          filterQuality: AppState().usePixelSprites
+                              ? FilterQuality.none
+                              : FilterQuality.high,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.catching_pokemon,
+                            size: useTinyText ? 20 : useCompactText ? 40 : 60,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
                         ),
                       ),
                     ),

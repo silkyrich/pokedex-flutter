@@ -266,32 +266,15 @@ class _HomeScreenState extends State<HomeScreen> {
     // Continuous zoom: dynamic columns and aspect ratio based on scale
     final scale = AppState().cardScale;
 
-    // Column count: grows as we scale up - sprites get smaller but more numerous
-    final crossAxisCount = scale < 0.1
-        ? (baseColumns * 0.8).round().clamp(5, 8)  // Very tiny: 5-8 columns (big sprites!)
-        : scale < 0.2
-            ? (baseColumns * 1.2).round().clamp(8, 12)  // Tiny: 8-12 columns
-            : scale < 0.4
-                ? (baseColumns / 0.3).round().clamp(10, 15)  // Small: 10-12 columns
-                : scale < 0.6
-                    ? (baseColumns / 0.5).round().clamp(6, 10)  // Medium: 6-8 columns
-                    : scale < 0.8
-                        ? (baseColumns / 0.7).round().clamp(4, 6)  // Large: 4-5 columns
-                        : (baseColumns / 1.0).round().clamp(2, 4);  // Huge: 2-3 columns
+    // Column count: smooth decrease as scale increases (more zoom = fewer, larger cards)
+    // Formula: columns = baseColumns * (1 - scale * 0.6) to go from ~8 columns to ~3 columns
+    final crossAxisCount = (baseColumns * (1.2 - scale * 0.7)).round().clamp(2, 10);
 
-    // Aspect ratio: smooth progression from square to tall showcase
-    final aspectRatio = scale < 0.2
-        ? 1.0  // Square icons
-        : scale < 0.4
-            ? 0.95  // Nearly square
-            : scale < 0.6
-                ? 0.90  // Slight rectangle
-                : scale < 0.8
-                    ? 0.85  // Standard card
-                    : 0.75;  // Tall showcase
+    // Aspect ratio: smooth progression from square (1.0) to tall showcase (0.75)
+    final aspectRatio = (1.0 - scale * 0.25).clamp(0.75, 1.0);
 
-    // Spacing: tighter at small sizes, generous at large
-    final spacing = scale < 0.1 ? 2.0 : scale < 0.2 ? 4.0 : scale < 0.4 ? 10.0 : scale < 0.6 ? 14.0 : scale < 0.8 ? 16.0 : 20.0;
+    // Spacing: smooth progression from tight (2px) to generous (20px)
+    final spacing = (2.0 + scale * 18.0).clamp(2.0, 20.0);
 
     return Scaffold(
       body: _loading
