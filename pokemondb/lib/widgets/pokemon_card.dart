@@ -72,6 +72,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
     final bool showNameBox = scale >= 0.15;  // Name in box (vs overlay)
     final bool useTinyText = scale < 0.2;  // Very small text for tiny icons
     final bool useCompactText = scale < 0.5;  // Compact text for small/medium
+    final bool useHorizontalLayout = scale >= 0.25 && scale < 0.6;  // Wide horizontal cards at mid-scale
     final bool useShowcaseLayout = scale >= 0.8;  // Pokemon card-like layout for huge cards
 
     final cardWidget = MouseRegion(
@@ -130,7 +131,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(19), // Match outer radius
-              child: Stack(
+              child: useHorizontalLayout
+                  ? _buildHorizontalCard(context, theme, isDark, scale)
+                  : Stack(
                 fit: StackFit.expand,
                 children: [
                   // Type-colored background - fades in as scale increases (0.1 → 0.3)
@@ -587,9 +590,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
                 ],
-              ),
-            ),
-          ),
+              ),  // End of Stack
+            ),  // End of ClipRRect
+          ),  // End of AnimatedContainer
         ),
       ),
     );
@@ -618,5 +621,108 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
     }
 
     return cardWidget;
+  }
+
+  Widget _buildHorizontalCard(BuildContext context, ThemeData theme, bool isDark, double scale) {
+    // Horizontal card layout: sprite on left, info on right
+    return Container(
+      decoration: BoxDecoration(
+        gradient: _secondaryColor != null
+            ? LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  _primaryColor.withOpacity(0.9),
+                  _secondaryColor!.withOpacity(0.9),
+                ],
+              )
+            : LinearGradient(
+                colors: [_primaryColor.withOpacity(0.9), _primaryColor.withOpacity(0.9)],
+              ),
+      ),
+      child: Row(
+        children: [
+          // Left: Pokemon sprite (40% width)
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Hero(
+                tag: 'pokemon-sprite-${widget.pokemon.id}',
+                child: Transform.scale(
+                  scale: 1.3,  // Scale sprite in horizontal layout
+                  child: Image.network(
+                    AppState().usePixelSprites
+                        ? widget.pokemon.spriteUrl
+                        : widget.pokemon.imageUrl,
+                    fit: BoxFit.contain,
+                    filterQuality: AppState().usePixelSprites
+                        ? FilterQuality.none
+                        : FilterQuality.high,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Right: Pokemon info (60% width)
+          Expanded(
+            flex: 6,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name
+                  Text(
+                    widget.pokemon.displayName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: scale < 0.4 ? 11 : 14,
+                      color: Colors.white,
+                      shadows: const [
+                        Shadow(
+                          color: Colors.black,
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // Types
+                  if (widget.types != null && widget.types!.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 2,
+                      children: widget.types!.map((type) {
+                        return TypeBadge(
+                          type: type,
+                          size: scale < 0.4 ? BadgeSize.tiny : BadgeSize.small,
+                        );
+                      }).toList(),
+                    ),
+                  // ID
+                  if (scale >= 0.35)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '#${widget.pokemon.id.toString().padLeft(4, '0')}',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
