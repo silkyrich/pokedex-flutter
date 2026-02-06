@@ -91,34 +91,42 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E2A) : Colors.white,
+              // At tiny size: no background/border - just the sprite
+              color: scale < 0.15
+                  ? Colors.transparent
+                  : isDark ? const Color(0xFF1E1E2A) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              // Pokemon card-style gold border for showcase
-              border: Border.all(
-                color: useShowcaseLayout
-                    ? const Color(0xFFD4AF37) // Gold border for giant cards
-                    : _hovered
-                        ? _primaryColor.withOpacity(0.5)
-                        : isDark
-                            ? Colors.white.withOpacity(0.06)
-                            : Colors.grey.shade200,
-                width: useShowcaseLayout ? 4 : (_hovered ? 2 : 1),
-              ),
-              boxShadow: _hovered
-                  ? [
-                      BoxShadow(
-                        color: _primaryColor.withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+              // Pokemon card-style gold border for showcase, no border at tiny
+              border: scale < 0.15
+                  ? null // No border at tiny size
+                  : Border.all(
+                      color: useShowcaseLayout
+                          ? const Color(0xFFD4AF37) // Gold border for giant cards
+                          : _hovered
+                              ? _primaryColor.withOpacity(0.5)
+                              : isDark
+                                  ? Colors.white.withOpacity(0.06)
+                                  : Colors.grey.shade200,
+                      width: useShowcaseLayout ? 4 : (_hovered ? 2 : 1),
+                    ),
+              // No shadow at tiny size - just floating sprites
+              boxShadow: scale < 0.15
+                  ? null
+                  : _hovered
+                      ? [
+                          BoxShadow(
+                            color: _primaryColor.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(19), // Match outer radius
