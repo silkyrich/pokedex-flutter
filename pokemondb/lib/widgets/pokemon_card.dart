@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
 import '../services/app_state.dart';
+import 'type_badge.dart';
 
 // Discrete card layout modes for consistent UX
 enum CardLayout {
@@ -372,7 +373,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                                   alignment: WrapAlignment.center,
                                   spacing: 6,
                                   children: widget.types!.map((type) {
-                                    return TypeBadge(type: type, size: BadgeSize.small);
+                                    return TypeBadge(type: type, fontSize: 11);
                                   }).toList(),
                                 ),
                               ),
@@ -701,7 +702,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       children: widget.types!.map((type) {
                         return TypeBadge(
                           type: type,
-                          size: scale < 0.4 ? BadgeSize.tiny : BadgeSize.small,
+                          fontSize: scale < 0.4 ? 10 : 11,
                         );
                       }).toList(),
                     ),
