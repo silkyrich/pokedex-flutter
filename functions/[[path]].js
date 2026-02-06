@@ -205,6 +205,7 @@ function buildOgHtml({ title, description, image, url, twitterCard, playerUrl, p
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="${esc(card)}" />
+  <meta name="twitter:site" content="@DexGuideGG" />
   <meta name="twitter:title" content="${esc(title)}" />
   <meta name="twitter:description" content="${esc(description)}" />
   <meta name="twitter:image" content="${esc(image)}" />
@@ -214,8 +215,8 @@ function buildOgHtml({ title, description, image, url, twitterCard, playerUrl, p
   <meta name="twitter:player:width" content="${esc(playerWidth || '520')}" />
   <meta name="twitter:player:height" content="${esc(playerHeight || '730')}" />` : ''}
 
-  <!-- Redirect real users who somehow land here -->
-  <meta http-equiv="refresh" content="0;url=${esc(url)}" />
+  <!-- Redirect real users who somehow land here (delay allows crawlers to read meta tags) -->
+  <meta http-equiv="refresh" content="3;url=${esc(url)}" />
 </head>
 <body>
   <p>Redirecting to <a href="${esc(url)}">${esc(SITE_NAME)}</a>...</p>
@@ -567,8 +568,8 @@ async function handlePokemonRoute(id, context) {
     // Twitter player card for interactive embed
     twitterCard: 'player',
     playerUrl: `${SITE_URL}/embed/pokemon/${id}`,
-    playerWidth: '480',
-    playerHeight: '600',
+    playerWidth: '520',
+    playerHeight: '730',
   });
 }
 
