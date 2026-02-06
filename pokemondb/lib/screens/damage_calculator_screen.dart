@@ -7,6 +7,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
+import '../widgets/transparent_pokemon_image.dart';
 
 /// Showdown-style damage calculator.
 /// Uses Gen V+ damage formula with STAB, type effectiveness, crits.
@@ -339,8 +340,14 @@ class _DamageCalculatorScreenState extends State<DamageCalculatorScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Image.network(pokemon.imageUrl, width: 56, height: 56,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36)),
+                  AppState().transparentBackgrounds
+                      ? TransparentPokemonImage(
+                          imageUrl: pokemon.imageUrl,
+                          width: 56, height: 56,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36),
+                        )
+                      : Image.network(pokemon.imageUrl, width: 56, height: 56,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

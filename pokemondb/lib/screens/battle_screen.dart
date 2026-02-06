@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import '../models/pokemon.dart';
 import '../models/move.dart';
 import '../services/pokeapi_service.dart';
+import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
+import '../widgets/transparent_pokemon_image.dart';
 
 class BattleScreen extends StatefulWidget {
   final int? initialId1;
@@ -680,11 +682,17 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
       children: [
         Row(
           children: [
-            Image.network(
-              attacker.imageUrl,
-              width: 32, height: 32,
-              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24),
-            ),
+            AppState().transparentBackgrounds
+                ? TransparentPokemonImage(
+                    imageUrl: attacker.imageUrl,
+                    width: 32, height: 32,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24),
+                  )
+                : Image.network(
+                    attacker.imageUrl,
+                    width: 32, height: 32,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 24),
+                  ),
             const SizedBox(width: 8),
             Text(
               '${attacker.displayName} attacking',
@@ -781,8 +789,14 @@ class _BattleScreenState extends State<BattleScreen> with TickerProviderStateMix
         children: [
           Row(
             children: [
-              Image.network(pokemon.imageUrl, width: 28, height: 28,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 20)),
+              AppState().transparentBackgrounds
+                  ? TransparentPokemonImage(
+                      imageUrl: pokemon.imageUrl,
+                      width: 28, height: 28,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 20),
+                    )
+                  : Image.network(pokemon.imageUrl, width: 28, height: 28,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 20)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1226,12 +1240,19 @@ class _PokemonSlotDisplay extends StatelessWidget {
             ),
             shape: BoxShape.circle,
           ),
-          child: Image.network(
-            pokemon.imageUrl,
-            width: 100,
-            height: 100,
-            errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 48, color: color.withOpacity(0.3)),
-          ),
+          child: AppState().transparentBackgrounds
+              ? TransparentPokemonImage(
+                  imageUrl: pokemon.imageUrl,
+                  width: 100,
+                  height: 100,
+                  errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 48, color: color.withOpacity(0.3)),
+                )
+              : Image.network(
+                  pokemon.imageUrl,
+                  width: 100,
+                  height: 100,
+                  errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 48, color: color.withOpacity(0.3)),
+                ),
         ),
         const SizedBox(height: 10),
         GestureDetector(

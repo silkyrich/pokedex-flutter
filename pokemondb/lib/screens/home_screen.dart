@@ -464,6 +464,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                             size: 16,
                                             color: colorScheme.onSurface.withOpacity(0.4),
                                           ),
+                                          const SizedBox(width: 8),
+                                          Tooltip(
+                                            message: AppState().transparentBackgrounds
+                                                ? 'Transparent backgrounds: ON'
+                                                : 'Transparent backgrounds: OFF',
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(8),
+                                              onTap: () => AppState().toggleTransparentBackgrounds(),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(4),
+                                                child: Icon(
+                                                  AppState().transparentBackgrounds
+                                                      ? Icons.auto_fix_high
+                                                      : Icons.auto_fix_off,
+                                                  size: 16,
+                                                  color: AppState().transparentBackgrounds
+                                                      ? colorScheme.primary
+                                                      : colorScheme.onSurface.withOpacity(0.4),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ],

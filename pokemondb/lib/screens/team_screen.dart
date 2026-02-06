@@ -5,6 +5,7 @@ import '../services/app_state.dart';
 import '../services/pokeapi_service.dart';
 import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
+import '../widgets/transparent_pokemon_image.dart';
 import '../utils/type_colors.dart';
 
 // Curated list of strong Pokemon for suggestions (competitive viable mons)
@@ -807,8 +808,14 @@ class _TeamMemberCardState extends State<_TeamMemberCard> {
             color: TypeColors.getColor(widget.pokemon.types.first.name).withOpacity(widget.isDark ? 0.15 : 0.08),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Image.network(widget.pokemon.imageUrl, fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36)),
+          child: AppState().transparentBackgrounds
+              ? TransparentPokemonImage(
+                  imageUrl: widget.pokemon.imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36),
+                )
+              : Image.network(widget.pokemon.imageUrl, fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 36)),
         ),
         const SizedBox(width: 16),
         SizedBox(

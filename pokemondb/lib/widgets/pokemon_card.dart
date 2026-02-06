@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
 import '../services/app_state.dart';
+import 'transparent_pokemon_image.dart';
 
 class PokemonCard extends StatefulWidget {
   final PokemonBasic pokemon;
@@ -331,24 +332,33 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             ),
                           ] : null,
                         ),
-                        child: Image.network(
-                          AppState().usePixelSprites
-                              ? widget.pokemon.spriteUrl
-                              : widget.pokemon.imageUrl,
-                          // Cover fits the entire space, normalizing different sprite sizes
-                          fit: BoxFit.contain,
-                          // Crisp pixel art rendering
-                          filterQuality: AppState().usePixelSprites
-                              ? FilterQuality.none
-                              : FilterQuality.medium,
-                          // Prevent texture bleeding
-                          isAntiAlias: false,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.catching_pokemon,
-                            size: useTinyText ? 20 : useCompactText ? 40 : 60,
-                            color: Colors.white.withOpacity(0.3),
-                          ),
-                        ),
+                        child: AppState().transparentBackgrounds && !AppState().usePixelSprites
+                            ? TransparentPokemonImage(
+                                imageUrl: widget.pokemon.imageUrl,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.medium,
+                                isAntiAlias: false,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.catching_pokemon,
+                                  size: useTinyText ? 20 : useCompactText ? 40 : 60,
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
+                              )
+                            : Image.network(
+                                AppState().usePixelSprites
+                                    ? widget.pokemon.spriteUrl
+                                    : widget.pokemon.imageUrl,
+                                fit: BoxFit.contain,
+                                filterQuality: AppState().usePixelSprites
+                                    ? FilterQuality.none
+                                    : FilterQuality.medium,
+                                isAntiAlias: false,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.catching_pokemon,
+                                  size: useTinyText ? 20 : useCompactText ? 40 : 60,
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -669,16 +679,23 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ],
                   ),
-                  child: Image.network(
-                    AppState().usePixelSprites
-                        ? widget.pokemon.spriteUrl
-                        : widget.pokemon.imageUrl,
-                    fit: BoxFit.contain,
-                    filterQuality: AppState().usePixelSprites
-                        ? FilterQuality.none
-                        : FilterQuality.medium,
-                    isAntiAlias: false,
-                  ),
+                  child: AppState().transparentBackgrounds && !AppState().usePixelSprites
+                      ? TransparentPokemonImage(
+                          imageUrl: widget.pokemon.imageUrl,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.medium,
+                          isAntiAlias: false,
+                        )
+                      : Image.network(
+                          AppState().usePixelSprites
+                              ? widget.pokemon.spriteUrl
+                              : widget.pokemon.imageUrl,
+                          fit: BoxFit.contain,
+                          filterQuality: AppState().usePixelSprites
+                              ? FilterQuality.none
+                              : FilterQuality.medium,
+                          isAntiAlias: false,
+                        ),
                 ),
               ),
             ),

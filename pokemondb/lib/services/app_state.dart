@@ -51,6 +51,10 @@ class AppState extends ChangeNotifier {
   bool _useArtwork = true; // Default to HD artwork
   bool get useArtwork => _useArtwork;
 
+  // Transparent backgrounds — remove white backgrounds & trim margins
+  bool _transparentBackgrounds = true;
+  bool get transparentBackgrounds => _transparentBackgrounds;
+
   // Card size scale — continuous zoom from 0 to 1
   // 0.0 = list, 0.0-0.2 = growing list to sprites, 0.2-0.5 = sprite cards, 0.5-1.0 = artwork cards, 1.0 = full screen
   double _cardScale = 0.7;
@@ -108,6 +112,9 @@ class AppState extends ChangeNotifier {
     // Load sprite style preference
     _useArtwork = prefs.getBool('use_artwork') ?? false;
 
+    // Load transparent backgrounds preference
+    _transparentBackgrounds = prefs.getBool('transparent_backgrounds') ?? true;
+
     // Load card scale preference
     _cardScale = prefs.getDouble('card_scale') ?? 1.0;
 
@@ -127,6 +134,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('use_artwork', _useArtwork);
+  }
+
+  Future<void> toggleTransparentBackgrounds() async {
+    _transparentBackgrounds = !_transparentBackgrounds;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('transparent_backgrounds', _transparentBackgrounds);
   }
 
   Future<void> setCardScale(double scale) async {

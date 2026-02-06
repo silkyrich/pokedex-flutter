@@ -5,6 +5,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
+import '../widgets/transparent_pokemon_image.dart';
 
 /// "What beats this?" quick lookup.
 /// Tap a Pokemon, instantly get type counters and best team answers.
@@ -269,8 +270,14 @@ class _CounterScreenState extends State<CounterScreen> {
               color: typeColor.withOpacity(isDark ? 0.15 : 0.08),
               shape: BoxShape.circle,
             ),
-            child: Image.network(p.imageUrl, fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withOpacity(0.3))),
+            child: AppState().transparentBackgrounds
+                ? TransparentPokemonImage(
+                    imageUrl: p.imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withOpacity(0.3)),
+                  )
+                : Image.network(p.imageUrl, fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(Icons.catching_pokemon, size: 40, color: typeColor.withOpacity(0.3))),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -460,10 +467,16 @@ class _CounterScreenState extends State<CounterScreen> {
                       decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
                     ),
                     const SizedBox(width: 10),
-                    Image.network(
-                      tc.pokemon.imageUrl, width: 40, height: 40,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28),
-                    ),
+                    AppState().transparentBackgrounds
+                        ? TransparentPokemonImage(
+                            imageUrl: tc.pokemon.imageUrl,
+                            width: 40, height: 40,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28),
+                          )
+                        : Image.network(
+                            tc.pokemon.imageUrl, width: 40, height: 40,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 28),
+                          ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(

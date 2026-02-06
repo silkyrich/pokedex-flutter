@@ -10,6 +10,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../widgets/type_badge.dart';
 import '../widgets/stat_bar.dart';
+import '../widgets/transparent_pokemon_image.dart';
 import '../utils/type_colors.dart';
 
 class PokemonDetailScreen extends StatefulWidget {
@@ -493,18 +494,31 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
       child: Center(
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: Image.network(
-            p.imageUrl,
-            key: ValueKey(p.id),
-            width: 220,
-            height: 220,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Icon(
-              Icons.catching_pokemon,
-              size: 100,
-              color: typeColor.withOpacity(0.3),
-            ),
-          ),
+          child: AppState().transparentBackgrounds
+              ? TransparentPokemonImage(
+                  key: ValueKey(p.id),
+                  imageUrl: p.imageUrl,
+                  width: 220,
+                  height: 220,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.catching_pokemon,
+                    size: 100,
+                    color: typeColor.withOpacity(0.3),
+                  ),
+                )
+              : Image.network(
+                  p.imageUrl,
+                  key: ValueKey(p.id),
+                  width: 220,
+                  height: 220,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.catching_pokemon,
+                    size: 100,
+                    color: typeColor.withOpacity(0.3),
+                  ),
+                ),
         ),
       ),
     );

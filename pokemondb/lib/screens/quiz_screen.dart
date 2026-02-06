@@ -2,7 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/pokemon.dart';
 import '../services/pokeapi_service.dart';
+import '../services/app_state.dart';
 import '../utils/type_colors.dart';
+import '../widgets/transparent_pokemon_image.dart';
 
 enum QuizMode { whoseThat, typeMatchup, statShowdown }
 
@@ -396,14 +398,23 @@ class _QuizScreenState extends State<QuizScreen> {
                           0, 0, 0, 0, 0.2,
                           0, 0, 0, 1, 0,
                         ]),
-                  child: Image.network(
-                    q.imageUrl!,
-                    width: 200,
-                    height: 200,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) =>
-                        Icon(Icons.catching_pokemon, size: 80, color: colorScheme.onSurface.withOpacity(0.2)),
-                  ),
+                  child: AppState().transparentBackgrounds
+                      ? TransparentPokemonImage(
+                          imageUrl: q.imageUrl!,
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(Icons.catching_pokemon, size: 80, color: colorScheme.onSurface.withOpacity(0.2)),
+                        )
+                      : Image.network(
+                          q.imageUrl!,
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(Icons.catching_pokemon, size: 80, color: colorScheme.onSurface.withOpacity(0.2)),
+                        ),
                 ),
               ),
             ),
@@ -564,14 +575,23 @@ class _QuizScreenState extends State<QuizScreen> {
         color: colorScheme.primary.withOpacity(isDark ? 0.08 : 0.04),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Image.network(
-        'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png',
-        width: 100,
-        height: 100,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            Icon(Icons.catching_pokemon, size: 48, color: colorScheme.onSurface.withOpacity(0.2)),
-      ),
+      child: AppState().transparentBackgrounds
+          ? TransparentPokemonImage(
+              imageUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png',
+              width: 100,
+              height: 100,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) =>
+                  Icon(Icons.catching_pokemon, size: 48, color: colorScheme.onSurface.withOpacity(0.2)),
+            )
+          : Image.network(
+              'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png',
+              width: 100,
+              height: 100,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) =>
+                  Icon(Icons.catching_pokemon, size: 48, color: colorScheme.onSurface.withOpacity(0.2)),
+            ),
     );
   }
 

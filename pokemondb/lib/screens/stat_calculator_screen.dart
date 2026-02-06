@@ -6,6 +6,7 @@ import '../services/pokeapi_service.dart';
 import '../services/app_state.dart';
 import '../utils/type_colors.dart';
 import '../widgets/type_badge.dart';
+import '../widgets/transparent_pokemon_image.dart';
 
 /// Pokemon stat calculator with EV/IV/Nature inputs.
 /// Calculates actual stats at levels 50 and 100.
@@ -245,8 +246,14 @@ class _StatCalculatorScreenState extends State<StatCalculatorScreen> {
                         color: TypeColors.getColor(_pokemon!.types.first.name).withOpacity(isDark ? 0.15 : 0.08),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Image.network(_pokemon!.imageUrl, fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 40)),
+                      child: AppState().transparentBackgrounds
+                          ? TransparentPokemonImage(
+                              imageUrl: _pokemon!.imageUrl,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 40),
+                            )
+                          : Image.network(_pokemon!.imageUrl, fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.catching_pokemon, size: 40)),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
