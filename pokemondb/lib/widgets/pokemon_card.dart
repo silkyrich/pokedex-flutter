@@ -74,7 +74,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
     final bool useCompactText = scale < 0.5;  // Compact text for small/medium
     final bool useShowcaseLayout = scale >= 0.8;  // Pokemon card-like layout for huge cards
 
-    return MouseRegion(
+    final cardWidget = MouseRegion(
       onEnter: (_) {
         setState(() => _hovered = true);
         _controller.forward();
@@ -573,5 +573,30 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
         ),
       ),
     );
+
+    // Add tooltip for tiny cards - shows name on hover
+    if (showTinyDots || useTinyText) {
+      return Tooltip(
+        message: widget.pokemon.displayName,
+        textStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+        decoration: BoxDecoration(
+          color: _primaryColor.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        waitDuration: const Duration(milliseconds: 200),
+        child: cardWidget,
+      );
+    }
+
+    return cardWidget;
   }
 }
