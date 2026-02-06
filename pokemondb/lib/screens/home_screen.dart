@@ -402,46 +402,42 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(fontSize: 15),
                               ),
                               const SizedBox(height: 12),
-                              // View mode slider (list ← → grid)
+                              // View mode toggle buttons
                               ListenableBuilder(
                                 listenable: AppState(),
                                 builder: (context, _) {
                                   final scale = AppState().cardScale;
-                                  String viewMode = scale < 0.35
-                                      ? 'List'
-                                      : scale < 0.6
-                                          ? 'Compact'
-                                          : scale < 0.9
-                                              ? 'Normal'
-                                              : 'Large';
+                                  final isListView = scale < 0.35;
+                                  final isSpriteView = scale >= 0.35 && scale < 0.65;
+                                  final isDrawingView = scale >= 0.65;
+
                                   return Row(
                                     children: [
-                                      Icon(
-                                        Icons.view_list_rounded,
-                                        size: 16,
-                                        color: colorScheme.onSurface.withOpacity(0.4),
+                                      Expanded(
+                                        child: _ViewModeButton(
+                                          icon: Icons.view_list_rounded,
+                                          label: 'List',
+                                          isSelected: isListView,
+                                          onTap: () => AppState().setCardScale(0.25),
+                                        ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        viewMode,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: colorScheme.onSurface.withOpacity(0.6),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
                                       Expanded(
-                                        child: Slider(
-                                          value: scale,
-                                          min: 0.2,
-                                          max: 1.3,
-                                          onChanged: (value) => AppState().setCardScale(value),
+                                        child: _ViewModeButton(
+                                          icon: Icons.grid_on,
+                                          label: 'Sprite',
+                                          isSelected: isSpriteView,
+                                          onTap: () => AppState().setCardScale(0.5),
                                         ),
                                       ),
-                                      Icon(
-                                        Icons.view_module_rounded,
-                                        size: 16,
-                                        color: colorScheme.onSurface.withOpacity(0.4),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _ViewModeButton(
+                                          icon: Icons.image_outlined,
+                                          label: 'Drawing',
+                                          isSelected: isDrawingView,
+                                          onTap: () => AppState().setCardScale(0.7),
+                                        ),
                                       ),
                                     ],
                                   );
@@ -1107,6 +1103,80 @@ class _TypeChip extends StatelessWidget {
                   color: selected ? textColor : isDark ? typeColor : typeColor.withOpacity(0.9),
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- View mode toggle button ---
+
+class _ViewModeButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ViewModeButton({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? colorScheme.primary
+                : isDark
+                    ? Colors.white.withOpacity(0.04)
+                    : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? colorScheme.primary
+                  : isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.grey.shade300,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? Colors.white
+                    : colorScheme.onSurface.withOpacity(0.6),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ],
