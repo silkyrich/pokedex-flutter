@@ -1,15 +1,23 @@
 /**
  * DexGuide — Cloudflare Pages Function (catch-all)
  *
- * Runs on every request to dexguide.gg. Two jobs:
+ * Runs on every request to dexguide.gg. Three jobs:
  *
  * 1. CRAWLER REQUESTS: Returns a small HTML page with correct Open Graph
  *    meta tags so link previews in iMessage, Slack, Discord, Twitter,
- *    Facebook etc. show the right Pokemon artwork, name, and description.
+ *    Facebook etc. show the right Pokemon artwork, name, and stats.
  *
- * 2. REGULAR USERS: Falls through to static assets. If no static file
+ * 2. ANALYTICS TRACKING: Logs every OG card view with rich metadata
+ *    (Pokemon ID, types, BST, social platform, country) for measuring
+ *    viral spread and understanding sharing patterns.
+ *
+ * 3. REGULAR USERS: Falls through to static assets. If no static file
  *    matches (SPA deep link like /pokemon/6), the _redirects rule
  *    serves index.html so Flutter's router handles it client-side.
+ *
+ * TODO: Generate custom OG images with gold Pokemon card border
+ *       Currently using direct PokeAPI artwork URLs
+ *       Could use Cloudflare Images API or Workers to add border
  *
  * No copyrighted assets stored — OG image URLs point to PokeAPI's
  * hosted artwork on GitHub.
@@ -63,6 +71,47 @@ function isCrawler(request) {
   return false;
 }
 
+// --- Analytics Tracking ---
+
+function logAnalytics(context, data) {
+  const { request } = context;
+  const url = new URL(request.url);
+
+  // Extract tracking metadata
+  const tracking = {
+    ...data,
+    timestamp: new Date().toISOString(),
+    url: url.pathname,
+    referrer: request.headers.get('Referer') || null,
+    user_agent: request.headers.get('User-Agent') || null,
+    country: request.cf?.country || null,
+    city: request.cf?.city || null,
+    // Social platform detection
+    platform: detectSocialPlatform(request.headers.get('User-Agent') || ''),
+  };
+
+  // Log to Cloudflare Analytics (if available in context)
+  if (context.env?.ANALYTICS) {
+    context.env.ANALYTICS.writeDataPoint(tracking);
+  }
+
+  // Also log to console for debugging (shows in Cloudflare dashboard)
+  console.log('[OG Analytics]', JSON.stringify(tracking));
+}
+
+function detectSocialPlatform(ua) {
+  const lower = ua.toLowerCase();
+  if (lower.includes('facebookexternalhit') || lower.includes('facebot')) return 'facebook';
+  if (lower.includes('twitterbot')) return 'twitter';
+  if (lower.includes('whatsapp')) return 'whatsapp';
+  if (lower.includes('slackbot')) return 'slack';
+  if (lower.includes('linkedinbot')) return 'linkedin';
+  if (lower.includes('discordbot')) return 'discord';
+  if (lower.includes('telegrambot')) return 'telegram';
+  if (lower.includes('applebot')) return 'imessage';
+  return 'unknown';
+}
+
 // --- Helpers ---
 
 function formatPokemonName(name) {
@@ -101,7 +150,31 @@ async function fetchPokemonInfo(id) {
     }
 
     const types = data.types.map((t) => formatPokemonName(t.type.name));
-    return { name: displayName, types, id: data.id };
+
+    // Pull stats for rich OG cards
+    const stats = {};
+    data.stats.forEach((s) => {
+      stats[s.stat.name] = s.base_stat;
+    });
+    const bst = Object.values(stats).reduce((sum, val) => sum + val, 0);
+
+    // Pull abilities
+    const abilities = data.abilities
+      .filter((a) => !a.is_hidden) // Non-hidden abilities only for OG card
+      .map((a) => formatPokemonName(a.ability.name));
+    const hiddenAbility = data.abilities.find((a) => a.is_hidden);
+
+    return {
+      name: displayName,
+      types,
+      id: data.id,
+      stats,
+      bst,
+      abilities,
+      hiddenAbility: hiddenAbility ? formatPokemonName(hiddenAbility.ability.name) : null,
+      height: data.height,
+      weight: data.weight,
+    };
   } catch {
     return null;
   }
@@ -153,9 +226,15 @@ function buildOgHtml({ title, description, image, url }) {
 
 // --- Route handlers ---
 
-async function handlePokemonRoute(id) {
+async function handlePokemonRoute(id, context) {
   const info = await fetchPokemonInfo(id);
   if (!info) {
+    // Track failed lookup
+    logAnalytics(context, {
+      event: 'og_card_404',
+      pokemon_id: id,
+    });
+
     return buildOgHtml({
       title: `Pokemon #${padId(id)} — ${SITE_NAME}`,
       description: DEFAULT_DESCRIPTION,
@@ -164,10 +243,29 @@ async function handlePokemonRoute(id) {
     });
   }
 
+  // Track OG card view with rich metadata
+  logAnalytics(context, {
+    event: 'og_card_view',
+    pokemon_id: info.id,
+    pokemon_name: info.name,
+    types: info.types.join(','),
+    bst: info.bst,
+  });
+
   const typeStr = info.types.join(' / ');
+  const heightM = (info.height / 10).toFixed(1);
+  const weightKg = (info.weight / 10).toFixed(1);
+
+  // Rich description with stats and abilities
+  const description =
+    `${info.name} • ${typeStr} type\n` +
+    `HP ${info.stats.hp} • ATK ${info.stats.attack} • DEF ${info.stats.defense} • BST ${info.bst}\n` +
+    `Abilities: ${info.abilities.join(', ')}${info.hiddenAbility ? ` • Hidden: ${info.hiddenAbility}` : ''}\n` +
+    `${heightM}m tall, ${weightKg}kg`;
+
   return buildOgHtml({
     title: `${info.name} #${padId(info.id)} — ${SITE_NAME}`,
-    description: `${info.name} is a ${typeStr} type Pokemon. View stats, moves, abilities, evolution chain, and type matchups.`,
+    description,
     image: ARTWORK_URL(info.id),
     url: `${SITE_URL}/pokemon/${id}`,
   });
@@ -225,10 +323,16 @@ export async function onRequest(context) {
   const path = url.pathname;
   let match;
 
+  // Log all crawler requests
+  logAnalytics(context, {
+    event: 'crawler_request',
+    path: path,
+  });
+
   // /pokemon/:id
   match = path.match(/^\/pokemon\/(\d+)$/);
   if (match) {
-    return handlePokemonRoute(parseInt(match[1], 10));
+    return handlePokemonRoute(parseInt(match[1], 10), context);
   }
 
   // /battle/:id1/:id2
