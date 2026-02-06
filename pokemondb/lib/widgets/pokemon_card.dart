@@ -7,12 +7,14 @@ class PokemonCard extends StatefulWidget {
   final PokemonBasic pokemon;
   final List<String>? types;
   final VoidCallback onTap;
+  final int? bst; // Base Stat Total for showcase cards
 
   const PokemonCard({
     super.key,
     required this.pokemon,
     this.types,
     required this.onTap,
+    this.bst,
   });
 
   @override
@@ -70,6 +72,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
     final bool showNameBox = scale >= 0.15;  // Name in box (vs overlay)
     final bool useTinyText = scale < 0.2;  // Very small text for tiny icons
     final bool useCompactText = scale < 0.5;  // Compact text for small/medium
+    final bool useShowcaseLayout = scale >= 0.8;  // Pokemon card-like layout for huge cards
 
     return MouseRegion(
       onEnter: (_) {
@@ -168,9 +171,96 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
                   ),
+                  // Pokemon card-style header for showcase layout
+                  if (useShowcaseLayout && widget.bst != null)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.black.withOpacity(0.6),
+                            ],
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(19),
+                            topRight: Radius.circular(19),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            // Name - Pokemon card style
+                            Expanded(
+                              child: Text(
+                                widget.pokemon.displayName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // HP (using BST as proxy)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade700,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.red.shade900,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'HP',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${widget.bst}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // Pokemon image - fills entire card with Hero animation
                   Padding(
-                    padding: EdgeInsets.all(useTinyText ? 4 : useCompactText ? 8 : 16),
+                    padding: useTinyText
+                        ? const EdgeInsets.all(4)
+                        : useCompactText
+                            ? const EdgeInsets.all(8)
+                            : useShowcaseLayout
+                                ? const EdgeInsets.fromLTRB(20, 70, 20, 80)
+                                : const EdgeInsets.all(16),
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
                       child: Image.network(
@@ -189,8 +279,8 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
                   ),
-                  // Name - progressive sizing from tiny to large
-                  if (showNameBox)
+                  // Name - progressive sizing from tiny to large (hidden in showcase layout)
+                  if (showNameBox && !useShowcaseLayout)
                     Positioned(
                       top: useTinyText ? 2 : useCompactText ? 4 : 8,
                       left: useTinyText ? 2 : useCompactText ? 4 : 8,
@@ -241,8 +331,8 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                       ),
                     ),
-                  // ID badge - appears at medium sizes and up
-                  if (showIdBadge)
+                  // ID badge - appears at medium sizes and up (hidden in showcase layout)
+                  if (showIdBadge && !useShowcaseLayout)
                     Positioned(
                       top: useCompactText ? 4 : 8,
                       right: useCompactText ? 4 : 8,
@@ -271,12 +361,39 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                       ),
                     ),
+                  // Showcase: Prominent Pokedex number at bottom left
+                  if (useShowcaseLayout)
+                    Positioned(
+                      bottom: 12,
+                      left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _primaryColor.withOpacity(0.6),
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          widget.pokemon.idString,
+                          style: TextStyle(
+                            color: _primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+
                   // Type indicators - progressive: dots → pills → badges
                   if (widget.types != null && widget.types!.isNotEmpty)
                     Positioned(
-                      bottom: useTinyText ? 2 : useCompactText ? 4 : 8,
-                      left: useTinyText ? 2 : useCompactText ? 4 : 8,
-                      right: useTinyText ? 2 : useCompactText ? 4 : 8,
+                      bottom: useShowcaseLayout ? 12 : useTinyText ? 2 : useCompactText ? 4 : 8,
+                      left: useShowcaseLayout ? null : (useTinyText ? 2 : useCompactText ? 4 : 8),
+                      right: useShowcaseLayout ? 16 : (useTinyText ? 2 : useCompactText ? 4 : 8),
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         spacing: showTinyDots ? 2 : showSmallPills ? 2 : useCompactText ? 3 : 6,
@@ -325,29 +442,29 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             );
                           }
 
-                          // Medium/Large mode: Full badges with gradients and shadows
+                          // Medium/Large/Showcase mode: Full badges with gradients and shadows
                           return Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: showCompactBadges ? 6 : useCompactText ? 7 : 12,
-                              vertical: showCompactBadges ? 2 : useCompactText ? 3 : 5,
+                              horizontal: useShowcaseLayout ? 16 : showCompactBadges ? 6 : useCompactText ? 7 : 12,
+                              vertical: useShowcaseLayout ? 8 : showCompactBadges ? 2 : useCompactText ? 3 : 5,
                             ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  typeColor.withOpacity(0.9),
-                                  typeColor.withOpacity(0.8),
+                                  typeColor.withOpacity(0.95),
+                                  typeColor.withOpacity(0.85),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(showCompactBadges ? 6 : useCompactText ? 8 : 14),
+                              borderRadius: BorderRadius.circular(useShowcaseLayout ? 16 : showCompactBadges ? 6 : useCompactText ? 8 : 14),
                               border: Border.all(
-                                color: Colors.white.withOpacity(showCompactBadges ? 0.3 : 0.4),
-                                width: showCompactBadges ? 1 : useCompactText ? 1 : 2,
+                                color: Colors.white.withOpacity(useShowcaseLayout ? 0.6 : showCompactBadges ? 0.3 : 0.4),
+                                width: useShowcaseLayout ? 3 : showCompactBadges ? 1 : useCompactText ? 1 : 2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: typeColor.withOpacity(showCompactBadges ? 0.2 : 0.4),
-                                  blurRadius: showCompactBadges ? 3 : useCompactText ? 6 : 10,
-                                  spreadRadius: 0,
+                                  color: typeColor.withOpacity(useShowcaseLayout ? 0.5 : showCompactBadges ? 0.2 : 0.4),
+                                  blurRadius: useShowcaseLayout ? 12 : showCompactBadges ? 3 : useCompactText ? 6 : 10,
+                                  spreadRadius: useShowcaseLayout ? 1 : 0,
                                 ),
                               ],
                             ),
@@ -355,13 +472,13 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                               t[0].toUpperCase() + t.substring(1),
                               style: TextStyle(
                                 color: TypeColors.getTextColor(t),
-                                fontSize: showCompactBadges ? 8 : useCompactText ? 9 : 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: showCompactBadges ? 0.3 : useCompactText ? 0.4 : 0.6,
+                                fontSize: useShowcaseLayout ? 14 : showCompactBadges ? 8 : useCompactText ? 9 : 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: useShowcaseLayout ? 0.8 : showCompactBadges ? 0.3 : useCompactText ? 0.4 : 0.6,
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withOpacity(0.4),
-                                    blurRadius: 3,
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 4,
                                   ),
                                 ],
                               ),

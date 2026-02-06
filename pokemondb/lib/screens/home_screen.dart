@@ -591,6 +591,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 return PokemonCard(
                                   pokemon: entry.basic,
                                   types: entry.types,
+                                  bst: entry.bst,
                                   onTap: () => context.go('/pokemon/${entry.basic.id}'),
                                 );
                               },
