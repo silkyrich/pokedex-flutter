@@ -182,9 +182,11 @@ async function fetchPokemonInfo(id) {
 
 // --- OG HTML builder ---
 
-function buildOgHtml({ title, description, image, url }) {
+function buildOgHtml({ title, description, image, url, twitterCard, playerUrl, playerWidth, playerHeight }) {
   const esc = (s) =>
     s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+  const card = twitterCard || 'summary_large_image';
 
   return new Response(
     `<!DOCTYPE html>
@@ -202,10 +204,15 @@ function buildOgHtml({ title, description, image, url }) {
   <meta property="og:url" content="${esc(url)}" />
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:card" content="${esc(card)}" />
   <meta name="twitter:title" content="${esc(title)}" />
   <meta name="twitter:description" content="${esc(description)}" />
   <meta name="twitter:image" content="${esc(image)}" />
+  ${playerUrl ? `
+  <!-- Twitter Player Card (Interactive Embed) -->
+  <meta name="twitter:player" content="${esc(playerUrl)}" />
+  <meta name="twitter:player:width" content="${esc(playerWidth || '480')}" />
+  <meta name="twitter:player:height" content="${esc(playerHeight || '600')}" />` : ''}
 
   <!-- Redirect real users who somehow land here -->
   <meta http-equiv="refresh" content="0;url=${esc(url)}" />
@@ -219,6 +226,220 @@ function buildOgHtml({ title, description, image, url }) {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
         'Cache-Control': 'public, max-age=3600',
+      },
+    }
+  );
+}
+
+// --- Embed page builder for Twitter player card ---
+
+function buildEmbedHtml(info) {
+  const typeColors = {
+    normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
+    grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+    ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+    rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
+    steel: '#B8B8D0', fairy: '#EE99AC',
+  };
+
+  const primaryColor = typeColors[info.types[0].toLowerCase()] || '#777';
+  const heightM = (info.height / 10).toFixed(1);
+  const weightKg = (info.weight / 10).toFixed(1);
+
+  return new Response(
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${info.name} - DexGuide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, ${primaryColor}22, ${primaryColor}11);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .header {
+      background: ${primaryColor};
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 28px; margin-bottom: 4px; }
+    .header .id { opacity: 0.9; font-size: 14px; }
+    .image {
+      padding: 30px;
+      text-align: center;
+      background: linear-gradient(to bottom, ${primaryColor}11, transparent);
+    }
+    .image img { width: 200px; height: 200px; object-fit: contain; }
+    .types {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 0 20px 20px;
+    }
+    .type {
+      padding: 6px 16px;
+      border-radius: 20px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .stats {
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      text-align: center;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+    .abilities {
+      font-size: 13px;
+      color: #666;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .info {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+    .buttons {
+      padding: 20px;
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-primary {
+      background: ${primaryColor};
+      color: white;
+    }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>${info.name}</h1>
+      <div class="id">#${String(info.id).padStart(4, '0')}</div>
+    </div>
+    <div class="image">
+      <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${info.id}.png" alt="${info.name}">
+    </div>
+    <div class="types">
+      ${info.types.map(t => `<div class="type" style="background: ${typeColors[t.toLowerCase()] || '#777'}">${t}</div>`).join('')}
+    </div>
+    <div class="stats">
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-label">HP</div>
+          <div class="stat-value">${info.stats.hp}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ATK</div>
+          <div class="stat-value">${info.stats.attack}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">DEF</div>
+          <div class="stat-value">${info.stats.defense}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">SPA</div>
+          <div class="stat-value">${info.stats['special-attack']}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">SPD</div>
+          <div class="stat-value">${info.stats['special-defense']}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">SPE</div>
+          <div class="stat-value">${info.stats.speed}</div>
+        </div>
+      </div>
+      <div class="abilities">
+        <strong>Abilities:</strong> ${info.abilities.join(', ')}${info.hiddenAbility ? ` • Hidden: ${info.hiddenAbility}` : ''}
+      </div>
+      <div class="info">
+        ${heightM}m tall • ${weightKg}kg • BST ${info.bst}
+      </div>
+    </div>
+    <div class="buttons">
+      <a href="${SITE_URL}/pokemon/${info.id}" class="btn btn-primary" target="_top">
+        View Full Details
+      </a>
+      <a href="${SITE_URL}/team-builder?add=${info.id}" class="btn btn-secondary" target="_top">
+        Add to Team
+      </a>
+    </div>
+  </div>
+  <script>
+    // Track interactions
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        console.log('Button clicked:', e.target.textContent);
+        // Analytics will be tracked by parent page
+      });
+    });
+  </script>
+</body>
+</html>`,
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html;charset=UTF-8',
+        'Cache-Control': 'public, max-age=3600',
+        'X-Frame-Options': 'ALLOW-FROM https://twitter.com',
       },
     }
   );
@@ -268,6 +489,11 @@ async function handlePokemonRoute(id, context) {
     description,
     image: ARTWORK_URL(info.id),
     url: `${SITE_URL}/pokemon/${id}`,
+    // Twitter player card for interactive embed
+    twitterCard: 'player',
+    playerUrl: `${SITE_URL}/embed/pokemon/${id}`,
+    playerWidth: '480',
+    playerHeight: '600',
   });
 }
 
@@ -313,15 +539,33 @@ function handleDefault(path) {
 
 export async function onRequest(context) {
   const { request } = context;
-
-  // Only intercept GET requests from crawlers
-  if (request.method !== 'GET' || !isCrawler(request)) {
-    return context.next();
-  }
-
   const url = new URL(request.url);
   const path = url.pathname;
   let match;
+
+  // /embed/pokemon/:id - Twitter player card (serve to everyone, not just crawlers)
+  match = path.match(/^\/embed\/pokemon\/(\d+)$/);
+  if (match && request.method === 'GET') {
+    const id = parseInt(match[1], 10);
+    const info = await fetchPokemonInfo(id);
+    if (!info) {
+      return new Response('Pokemon not found', { status: 404 });
+    }
+
+    // Track embed view
+    logAnalytics(context, {
+      event: 'embed_view',
+      pokemon_id: id,
+      pokemon_name: info.name,
+    });
+
+    return buildEmbedHtml(info);
+  }
+
+  // Only intercept other GET requests from crawlers
+  if (request.method !== 'GET' || !isCrawler(request)) {
+    return context.next();
+  }
 
   // Log all crawler requests
   logAnalytics(context, {
