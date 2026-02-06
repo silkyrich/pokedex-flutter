@@ -213,38 +213,56 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                               ),
                             ),
                             // HP (using BST as proxy)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            Tooltip(
+                              message: 'Base Stat Total: ${widget.bst}\nCombined power of all stats',
+                              textStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade700,
+                                color: Colors.red.shade700.withOpacity(0.95),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: Colors.red.shade900,
-                                  width: 2,
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'HP',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
-                                    ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              waitDuration: const Duration(milliseconds: 300),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade700,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.red.shade900,
+                                    width: 2,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${widget.bst}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 18,
-                                      color: Colors.white,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'HP',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${widget.bst}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -361,29 +379,78 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                         ),
                       ),
                     ),
-                  // Showcase: Prominent Pokedex number at bottom left
+                  // Showcase: Decorative line separator (like real cards)
                   if (useShowcaseLayout)
                     Positioned(
-                      bottom: 12,
+                      bottom: 52,
                       left: 16,
+                      right: 16,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        height: 2,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _primaryColor.withOpacity(0.6),
-                            width: 2,
+                          gradient: LinearGradient(
+                            colors: [
+                              _primaryColor.withOpacity(0.3),
+                              _primaryColor.withOpacity(0.8),
+                              _secondaryColor?.withOpacity(0.8) ?? _primaryColor.withOpacity(0.8),
+                              (_secondaryColor ?? _primaryColor).withOpacity(0.3),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+
+                  // Showcase: Pokemon card-style bottom info section
+                  if (useShowcaseLayout)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.0),
+                              Colors.black.withOpacity(0.7),
+                              Colors.black.withOpacity(0.85),
+                            ],
+                            stops: const [0.0, 0.3, 1.0],
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(19),
+                            bottomRight: Radius.circular(19),
                           ),
                         ),
-                        child: Text(
-                          widget.pokemon.idString,
-                          style: TextStyle(
-                            color: _primaryColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
+                        child: Row(
+                          children: [
+                            // Pokedex number - styled like card number
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: _primaryColor.withOpacity(0.6),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                widget.pokemon.idString,
+                                style: TextStyle(
+                                  color: _primaryColor.withOpacity(0.9),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            // Types will appear here via the existing type badges section
+                          ],
                         ),
                       ),
                     ),
@@ -391,7 +458,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                   // Type indicators - progressive: dots → pills → badges
                   if (widget.types != null && widget.types!.isNotEmpty)
                     Positioned(
-                      bottom: useShowcaseLayout ? 12 : useTinyText ? 2 : useCompactText ? 4 : 8,
+                      bottom: useShowcaseLayout ? 16 : useTinyText ? 2 : useCompactText ? 4 : 8,
                       left: useShowcaseLayout ? null : (useTinyText ? 2 : useCompactText ? 4 : 8),
                       right: useShowcaseLayout ? 16 : (useTinyText ? 2 : useCompactText ? 4 : 8),
                       child: Wrap(
@@ -443,7 +510,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                           }
 
                           // Medium/Large/Showcase mode: Full badges with gradients and shadows
-                          return Container(
+                          final badge = Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: useShowcaseLayout ? 16 : showCompactBadges ? 6 : useCompactText ? 7 : 12,
                               vertical: useShowcaseLayout ? 8 : showCompactBadges ? 2 : useCompactText ? 3 : 5,
@@ -484,6 +551,30 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                               ),
                             ),
                           );
+
+                          // Add tooltip for medium/large/showcase cards
+                          if (!showTinyDots && !showSmallPills) {
+                            return Tooltip(
+                              message: '${t[0].toUpperCase() + t.substring(1)} type',
+                              textStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: BoxDecoration(
+                                color: typeColor.withOpacity(0.95),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              waitDuration: const Duration(milliseconds: 300),
+                              child: badge,
+                            );
+                          }
+                          return badge;
                         }).toList(),
                       ),
                     ),
