@@ -305,13 +305,15 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
 
                   // Pokemon image - fills entire card with Hero animation
                   Padding(
-                    padding: useTinyText
-                        ? const EdgeInsets.all(2) // Minimal padding for tiny icons
-                        : useCompactText
-                            ? const EdgeInsets.all(6)
-                            : useShowcaseLayout
-                                ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
-                                : const EdgeInsets.all(16),
+                    padding: scale < 0.15
+                        ? EdgeInsets.zero // NO padding at tiny - sprite fills entire space!
+                        : useTinyText
+                            ? const EdgeInsets.all(2)
+                            : useCompactText
+                                ? const EdgeInsets.all(6)
+                                : useShowcaseLayout
+                                    ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
+                                    : const EdgeInsets.all(16),
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
                       child: Image.network(

@@ -266,16 +266,18 @@ class _HomeScreenState extends State<HomeScreen> {
     // Continuous zoom: dynamic columns and aspect ratio based on scale
     final scale = AppState().cardScale;
 
-    // Column count: 20 at tiny, 2-3 at huge
-    final crossAxisCount = scale < 0.2
-        ? (baseColumns / 0.15).round().clamp(15, 25)  // Tiny: 15-20+ columns
-        : scale < 0.4
-            ? (baseColumns / 0.3).round().clamp(10, 15)  // Small: 10-12 columns
-            : scale < 0.6
-                ? (baseColumns / 0.5).round().clamp(6, 10)  // Medium: 6-8 columns
-                : scale < 0.8
-                    ? (baseColumns / 0.7).round().clamp(4, 6)  // Large: 4-5 columns
-                    : (baseColumns / 1.0).round().clamp(2, 4);  // Huge: 2-3 columns
+    // Column count: grows as we scale up - sprites get smaller but more numerous
+    final crossAxisCount = scale < 0.1
+        ? (baseColumns * 0.8).round().clamp(5, 8)  // Very tiny: 5-8 columns (big sprites!)
+        : scale < 0.2
+            ? (baseColumns * 1.2).round().clamp(8, 12)  // Tiny: 8-12 columns
+            : scale < 0.4
+                ? (baseColumns / 0.3).round().clamp(10, 15)  // Small: 10-12 columns
+                : scale < 0.6
+                    ? (baseColumns / 0.5).round().clamp(6, 10)  // Medium: 6-8 columns
+                    : scale < 0.8
+                        ? (baseColumns / 0.7).round().clamp(4, 6)  // Large: 4-5 columns
+                        : (baseColumns / 1.0).round().clamp(2, 4);  // Huge: 2-3 columns
 
     // Aspect ratio: smooth progression from square to tall showcase
     final aspectRatio = scale < 0.2
@@ -289,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     : 0.75;  // Tall showcase
 
     // Spacing: tighter at small sizes, generous at large
-    final spacing = scale < 0.2 ? 6.0 : scale < 0.4 ? 10.0 : scale < 0.6 ? 14.0 : scale < 0.8 ? 16.0 : 20.0;
+    final spacing = scale < 0.1 ? 2.0 : scale < 0.2 ? 4.0 : scale < 0.4 ? 10.0 : scale < 0.6 ? 14.0 : scale < 0.8 ? 16.0 : 20.0;
 
     return Scaffold(
       body: _loading
