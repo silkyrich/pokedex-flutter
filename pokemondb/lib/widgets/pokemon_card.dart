@@ -26,6 +26,8 @@ class PokemonCard extends StatefulWidget {
   final List<String>? types;
   final VoidCallback onTap;
   final int? bst; // Base Stat Total for showcase cards
+  final Map<String, int>? stats; // Individual stats for showcase
+  final List<String>? abilities; // Ability names for showcase
 
   const PokemonCard({
     super.key,
@@ -33,6 +35,8 @@ class PokemonCard extends StatefulWidget {
     this.types,
     required this.onTap,
     this.bst,
+    this.stats,
+    this.abilities,
   });
 
   @override
@@ -488,44 +492,51 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                                   }).toList(),
                                 ),
                               ),
-                            // Stats grid: 2 rows × 3 columns
+                            // Stats: Individual grid if available, otherwise just BST
                             Container(
                               padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildStatCell('HP', '45'),
-                                      _buildStatCell('ATK', '49'),
-                                      _buildStatCell('DEF', '49'),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildStatCell('SPA', '65'),
-                                      _buildStatCell('SPD', '65'),
-                                      _buildStatCell('SPE', '45'),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                              child: widget.stats != null
+                                  ? Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            _buildStatCell('HP', widget.stats!['hp']?.toString() ?? '-'),
+                                            _buildStatCell('ATK', widget.stats!['attack']?.toString() ?? '-'),
+                                            _buildStatCell('DEF', widget.stats!['defense']?.toString() ?? '-'),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            _buildStatCell('SPA', widget.stats!['special-attack']?.toString() ?? '-'),
+                                            _buildStatCell('SPD', widget.stats!['special-defense']?.toString() ?? '-'),
+                                            _buildStatCell('SPE', widget.stats!['speed']?.toString() ?? '-'),
+                                          ],
+                                        ),
+                                      ],
+                                    )
+                                  : Center(
+                                      child: _buildStatCell('BST', widget.bst?.toString() ?? '-'),
+                                    ),
                             ),
                             // Abilities horizontal
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6, bottom: 4),
-                              child: Text(
-                                'Overgrow • Chlorophyll',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600,
+                            if (widget.abilities != null && widget.abilities!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6, bottom: 4),
+                                child: Text(
+                                  widget.abilities!.join(' • '),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
-                            ),
                             // ID number
                             Text(
                               widget.pokemon.idString,
