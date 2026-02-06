@@ -270,8 +270,13 @@ class _HomeScreenState extends State<HomeScreen> {
     // Formula: columns = baseColumns * (1 - scale * 0.6) to go from ~8 columns to ~3 columns
     final crossAxisCount = (baseColumns * (1.2 - scale * 0.7)).round().clamp(2, 10);
 
-    // Aspect ratio: smooth progression from square (1.0) to tall showcase (0.75)
-    final aspectRatio = (1.0 - scale * 0.25).clamp(0.75, 1.0);
+    // Aspect ratio: square at tiny → wide for horizontal cards → tall for showcase
+    // 0.0: 1.0 (square), 0.3: 1.8 (wide horizontal), 0.6: 1.0 (square), 1.0: 0.75 (tall)
+    final aspectRatio = scale < 0.3
+        ? 1.0 + (scale / 0.3) * 0.8  // 1.0 → 1.8 (getting wider)
+        : scale < 0.6
+            ? 1.8 - ((scale - 0.3) / 0.3) * 0.8  // 1.8 → 1.0 (getting less wide)
+            : 1.0 - ((scale - 0.6) / 0.4) * 0.25;  // 1.0 → 0.75 (getting tall)
 
     // Spacing: smooth progression from tight (2px) to generous (20px)
     final spacing = (2.0 + scale * 18.0).clamp(2.0, 20.0);

@@ -96,9 +96,9 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                   ? Colors.transparent
                   : isDark ? const Color(0xFF1E1E2A) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              // Pokemon card-style gold border for showcase, no border at tiny
-              border: scale < 0.15
-                  ? null // No border at tiny size
+              // Pokemon card-style gold border for showcase, no border at tiny/small
+              border: scale < 0.3
+                  ? null // No border at tiny/small sizes - maximize sprite space
                   : Border.all(
                       color: useShowcaseLayout
                           ? const Color(0xFFD4AF37) // Gold border for giant cards
@@ -107,7 +107,7 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                               : isDark
                                   ? Colors.white.withOpacity(0.06)
                                   : Colors.grey.shade200,
-                      width: useShowcaseLayout ? 4 : (_hovered ? 2 : 1),
+                      width: useShowcaseLayout ? 3 : (_hovered ? 1.5 : 0.5),  // Thinner borders
                     ),
               // No shadow at tiny size - just floating sprites
               boxShadow: scale < 0.15
@@ -303,24 +303,25 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ),
 
-                  // Pokemon image - fills entire card with Hero animation
+                  // Pokemon image - minimal padding to maximize sprite size
                   Padding(
-                    padding: scale < 0.15
-                        ? EdgeInsets.zero // NO padding at tiny - sprite fills entire space!
-                        : useTinyText
-                            ? const EdgeInsets.all(2)
-                            : useCompactText
-                                ? const EdgeInsets.all(6)
-                                : useShowcaseLayout
-                                    ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
-                                    : const EdgeInsets.all(16),
+                    padding: scale < 0.3
+                        ? EdgeInsets.zero // NO padding at tiny/small - sprite fills space!
+                        : scale < 0.6
+                            ? const EdgeInsets.all(4)  // Minimal padding for mid-sizes
+                            : useShowcaseLayout
+                                ? const EdgeInsets.fromLTRB(24, 72, 24, 75) // Larger artwork
+                                : const EdgeInsets.all(12),  // Less padding than before
                     child: Hero(
                       tag: 'pokemon-sprite-${widget.pokemon.id}',
                       child: Transform.scale(
-                        // Smooth sprite scaling: 0.6x at tiny → 1.0x at medium → 1.0x at large
+                        // Aggressive sprite scaling to fill space and reduce whitespace
+                        // Tiny: 1.8x (big sprites!), Medium: 1.2x, Large: 1.0x
                         scale: scale < 0.3
-                            ? 0.6 + (scale / 0.3) * 0.4  // 0.6 → 1.0 as scale goes 0.0 → 0.3
-                            : 1.0,
+                            ? 1.8 - (scale / 0.3) * 0.6  // 1.8 → 1.2 as scale goes 0.0 → 0.3
+                            : scale < 0.6
+                                ? 1.2 - ((scale - 0.3) / 0.3) * 0.2  // 1.2 → 1.0 as scale goes 0.3 → 0.6
+                                : 1.0,  // 1.0 at large scales
                         child: Image.network(
                           AppState().usePixelSprites
                               ? widget.pokemon.spriteUrl
