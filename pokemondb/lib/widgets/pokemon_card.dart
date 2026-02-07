@@ -3,6 +3,7 @@ import '../models/pokemon.dart';
 import '../utils/type_colors.dart';
 import '../services/app_state.dart';
 import 'type_badge.dart';
+import 'pokemon_image.dart';
 
 // Discrete card layout modes for consistent UX
 enum CardLayout {
@@ -241,22 +242,10 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             ),
                           ] : null,
                         ),
-                        child: ClipRect(
-                          child: Transform.scale(
-                            scale: 475 / 431, // Trim 22px border from PokeAPI artwork
-                            child: Image.network(
-                              // Always use official artwork - scales better than sprites
-                              widget.pokemon.imageUrl,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.medium,
-                              isAntiAlias: true,
-                              errorBuilder: (_, __, ___) => Icon(
-                                Icons.catching_pokemon,
-                                size: useTinyText ? 20 : useCompactText ? 40 : 60,
-                                color: Colors.white.withOpacity(0.3),
-                              ),
-                            ),
-                          ),
+                        child: PokemonImage(
+                          pokemon: widget.pokemon,
+                          fit: BoxFit.contain,
+                          useSprite: false, // Always use official artwork
                         ),
                       ),
                     ),
@@ -660,17 +649,10 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ],
                   ),
-                  child: ClipRect(
-                    child: Transform.scale(
-                      scale: 475 / 431, // Trim 22px border from PokeAPI artwork
-                      child: Image.network(
-                        // Always use official artwork
-                        widget.pokemon.imageUrl,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.medium,
-                        isAntiAlias: true,
-                      ),
-                    ),
+                  child: PokemonImage(
+                    pokemon: widget.pokemon,
+                    fit: BoxFit.contain,
+                    useSprite: false, // Official artwork
                   ),
                 ),
               ),
