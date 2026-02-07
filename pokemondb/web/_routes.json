@@ -1,11 +1,11 @@
 {
   "version": 1,
   "include": [
-    "/*"
+    "/pokemon/*",
+    "/embed/*",
+    "/battle/*/*"
   ],
   "exclude": [
-    "/pokemon/*",
-    "/embed/pokemon/*",
-    "/battle/*/*"
+    "/assets/*"
   ]
 }
