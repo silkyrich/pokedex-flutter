@@ -234,84 +234,87 @@ async function generateOgImage(info) {
   const heightM = (info.height / 10).toFixed(1);
   const weightKg = (info.weight / 10).toFixed(1);
 
-  const artworkUrl = ARTWORK_URL(info.id);
-
   // Load two font weights for visual hierarchy
   const [fontRegular, fontBold] = await Promise.all([
     loadGoogleFont({ family: 'Inter', weight: 400 }),
     loadGoogleFont({ family: 'Inter', weight: 700 }),
   ]);
 
-  // Stat bar helper — returns an HTML string for a single stat row
+  // Stat bar helper
   const statBar = (label, value, max = 255) => {
     const pct = Math.min((value / max) * 100, 100);
     return `
-      <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-        <div style="display: flex; font-size: 16px; color: rgba(255,255,255,0.7); width: 36px; justify-content: flex-end;">${label}</div>
-        <div style="display: flex; flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden;">
-          <div style="display: flex; width: ${pct}%; height: 100%; background: white; border-radius: 4px;"></div>
+      <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+        <div style="display: flex; font-size: 15px; color: rgba(255,255,255,0.6); width: 34px; justify-content: flex-end;">${label}</div>
+        <div style="display: flex; flex: 1; height: 10px; background: rgba(0,0,0,0.25); border-radius: 5px; overflow: hidden;">
+          <div style="display: flex; width: ${pct}%; height: 100%; background: rgba(255,255,255,0.9); border-radius: 5px;"></div>
         </div>
-        <div style="display: flex; font-size: 18px; font-weight: 700; color: white; width: 36px;">${value}</div>
+        <div style="display: flex; font-size: 20px; font-weight: 700; color: white; width: 40px;">${value}</div>
       </div>`;
   };
 
   // Type badge helper
   const typeBadge = (typeName) => {
     const tc = TYPE_COLORS[typeName.toLowerCase()] || TYPE_COLORS.normal;
-    return `<div style="display: flex; background: ${tc.bg}; border: 2px solid rgba(255,255,255,0.4); border-radius: 20px; padding: 6px 18px; font-size: 18px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${typeName}</div>`;
+    return `<div style="display: flex; background: ${tc.bg}; border: 2px solid rgba(255,255,255,0.4); border-radius: 20px; padding: 8px 22px; font-size: 18px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1.5px;">${typeName}</div>`;
   };
+
+  // Truncate flavor text to fit nicely
+  let flavor = info.flavorText || '';
+  if (flavor.length > 120) flavor = flavor.slice(0, 117) + '...';
 
   const html = `
     <div style="display: flex; width: 1200px; height: 630px; background: linear-gradient(135deg, ${primary.bg}, ${secondary.bg}, ${primary.dark}); font-family: 'Inter', sans-serif; color: white; position: relative; overflow: hidden;">
 
-      <!-- Subtle pokeball watermark -->
-      <div style="display: flex; position: absolute; top: -80px; right: -80px; width: 400px; height: 400px; border-radius: 200px; border: 40px solid rgba(255,255,255,0.06);"></div>
-      <div style="display: flex; position: absolute; top: 80px; right: 80px; width: 80px; height: 80px; border-radius: 40px; border: 20px solid rgba(255,255,255,0.06);"></div>
+      <!-- Decorative circles (abstract, no copyrighted imagery) -->
+      <div style="display: flex; position: absolute; top: -100px; right: -100px; width: 500px; height: 500px; border-radius: 250px; border: 50px solid rgba(255,255,255,0.05);"></div>
+      <div style="display: flex; position: absolute; bottom: -60px; left: -60px; width: 300px; height: 300px; border-radius: 150px; border: 30px solid rgba(255,255,255,0.04);"></div>
+      <div style="display: flex; position: absolute; top: 200px; right: 200px; width: 120px; height: 120px; border-radius: 60px; background: rgba(255,255,255,0.04);"></div>
 
-      <!-- Left side: Info -->
-      <div style="display: flex; flex-direction: column; justify-content: center; padding: 56px 0 56px 56px; flex: 1;">
+      <!-- Left column: Identity -->
+      <div style="display: flex; flex-direction: column; justify-content: center; padding: 56px; flex: 1;">
 
-        <!-- ID number -->
-        <div style="display: flex; font-size: 22px; color: rgba(255,255,255,0.5); font-weight: 700; margin-bottom: 4px;">#${String(info.id).padStart(3, '0')}</div>
+        <!-- Big ID number as visual anchor -->
+        <div style="display: flex; font-size: 120px; font-weight: 700; color: rgba(255,255,255,0.1); position: absolute; top: 20px; left: 40px;">#${String(info.id).padStart(3, '0')}</div>
 
         <!-- Name -->
-        <div style="display: flex; font-size: 64px; font-weight: 700; color: white; margin-bottom: 16px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));">${info.name}</div>
+        <div style="display: flex; font-size: 72px; font-weight: 700; color: white; margin-bottom: 8px; line-height: 1.1;">${info.name}</div>
 
         <!-- Genus -->
-        ${info.genus ? `<div style="display: flex; font-size: 20px; color: rgba(255,255,255,0.7); margin-bottom: 20px; font-style: italic;">${info.genus}</div>` : ''}
+        ${info.genus ? `<div style="display: flex; font-size: 22px; color: rgba(255,255,255,0.65); margin-bottom: 24px;">${info.genus}</div>` : ''}
 
         <!-- Type badges -->
-        <div style="display: flex; gap: 10px; margin-bottom: 28px;">
+        <div style="display: flex; gap: 12px; margin-bottom: 28px;">
           ${info.types.map(t => typeBadge(t)).join('')}
         </div>
 
-        <!-- Stats -->
-        <div style="display: flex; flex-direction: column; gap: 6px; width: 340px;">
-          ${statBar('HP', info.stats.hp)}
-          ${statBar('ATK', info.stats.attack)}
-          ${statBar('DEF', info.stats.defense)}
-          ${statBar('SPA', info.stats['special-attack'])}
-          ${statBar('SPD', info.stats['special-defense'])}
-          ${statBar('SPE', info.stats.speed)}
-        </div>
+        <!-- Flavor text -->
+        ${flavor ? `<div style="display: flex; font-size: 18px; color: rgba(255,255,255,0.6); line-height: 1.5; max-width: 440px;">${flavor}</div>` : ''}
 
-        <!-- BST + physical -->
-        <div style="display: flex; gap: 16px; margin-top: 16px; font-size: 15px; color: rgba(255,255,255,0.5);">
+        <!-- Physical stats -->
+        <div style="display: flex; gap: 20px; margin-top: 24px; font-size: 16px; color: rgba(255,255,255,0.5);">
+          <div style="display: flex;">${heightM} m</div>
+          <div style="display: flex; color: rgba(255,255,255,0.2);">|</div>
+          <div style="display: flex;">${weightKg} kg</div>
+          <div style="display: flex; color: rgba(255,255,255,0.2);">|</div>
           <div style="display: flex;">BST ${info.bst}</div>
-          <div style="display: flex;">${heightM}m</div>
-          <div style="display: flex;">${weightKg}kg</div>
         </div>
       </div>
 
-      <!-- Right side: Artwork -->
-      <div style="display: flex; align-items: center; justify-content: center; width: 480px; padding: 40px;">
-        <img src="${artworkUrl}" width="400" height="400" style="display: flex; filter: drop-shadow(0 12px 32px rgba(0,0,0,0.5));" />
+      <!-- Right column: Stats -->
+      <div style="display: flex; flex-direction: column; justify-content: center; width: 420px; padding: 56px 56px 56px 0; gap: 10px;">
+        ${statBar('HP', info.stats.hp)}
+        ${statBar('ATK', info.stats.attack)}
+        ${statBar('DEF', info.stats.defense)}
+        ${statBar('SPA', info.stats['special-attack'])}
+        ${statBar('SPD', info.stats['special-defense'])}
+        ${statBar('SPE', info.stats.speed)}
       </div>
 
       <!-- DexGuide branding bar -->
-      <div style="display: flex; position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: rgba(0,0,0,0.3); align-items: center; justify-content: space-between; padding: 0 56px;">
-        <div style="display: flex; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.6);">DexGuide</div>
-        <div style="display: flex; font-size: 14px; color: rgba(255,255,255,0.4);">dexguide.gg</div>
+      <div style="display: flex; position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: rgba(0,0,0,0.25); align-items: center; justify-content: space-between; padding: 0 56px;">
+        <div style="display: flex; font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.5);">DexGuide</div>
+        <div style="display: flex; font-size: 13px; color: rgba(255,255,255,0.35);">dexguide.gg/pokemon/${info.id}</div>
       </div>
     </div>`;
 
