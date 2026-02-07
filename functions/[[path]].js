@@ -32,7 +32,14 @@ const DEFAULT_DESCRIPTION =
 const ARTWORK_URL = (id) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 
-const DEFAULT_IMAGE = ARTWORK_URL(25); // Pikachu fallback
+// Cropped artwork via wsrv.nl (free open-source image proxy).
+// Trims 22px from each edge (475→431) to cut dead transparent margins
+// while preserving relative Pokemon sizes. The proxy fetches from PokeAPI,
+// crops, and serves — no copyrighted bytes touch our infrastructure.
+const CROPPED_ARTWORK_URL = (id) =>
+  `https://wsrv.nl/?url=raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png&cx=22&cy=22&cw=431&ch=431`;
+
+const DEFAULT_IMAGE = CROPPED_ARTWORK_URL(25); // Pikachu fallback
 
 // --- Crawler detection ---
 
@@ -500,7 +507,7 @@ function buildEmbedHtml(info, options = {}) {
       </div>
 
       <div class="artwork">
-        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${info.id}.png" alt="${info.name}">
+        <img src="https://wsrv.nl/?url=raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${info.id}.png&cx=22&cy=22&cw=431&ch=431" alt="${info.name}">
       </div>
 
       <div class="stats">
@@ -565,7 +572,7 @@ async function handlePokemonRoute(id, context) {
     return buildOgHtml({
       title: `Pokemon #${padId(id)} — ${SITE_NAME}`,
       description: DEFAULT_DESCRIPTION,
-      image: ARTWORK_URL(id),
+      image: CROPPED_ARTWORK_URL(id),
       url: `${SITE_URL}/pokemon/${id}`,
     });
   }
@@ -593,7 +600,7 @@ async function handlePokemonRoute(id, context) {
   return buildOgHtml({
     title: `${info.name} #${padId(info.id)} — ${SITE_NAME}`,
     description,
-    image: ARTWORK_URL(info.id),
+    image: CROPPED_ARTWORK_URL(info.id),
     url: `${SITE_URL}/pokemon/${id}`,
     // Twitter player card for interactive embed
     twitterCard: 'player',
@@ -615,7 +622,7 @@ async function handleBattleRoute(id1, id2) {
   return buildOgHtml({
     title: `${name1} vs ${name2} — Head to Head — ${SITE_NAME}`,
     description: `Compare ${name1} and ${name2} head to head. Type matchups, base stats, moves, and matchup analysis.`,
-    image: ARTWORK_URL(id1),
+    image: CROPPED_ARTWORK_URL(id1),
     url: `${SITE_URL}/battle/${id1}/${id2}`,
   });
 }
