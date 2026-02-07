@@ -97,13 +97,8 @@ class ImageProcessor {
   }
 
   /// Pure pixel-processing function that runs in an isolate.
-  /// 1. Removes white/near-white background pixels with soft alpha fade.
-  /// 2. Applies a uniform 22px trim from all edges (475→431) to cut dead
-  ///    space while preserving relative Pokemon sizes across all artwork.
-  ///    Empirical analysis of 61 Pokemon found 95% have ≥22px transparent
-  ///    margin; the few outliers (Giratina, Zamazenta, etc.) lose only a
-  ///    sliver of wing/tail tip — an acceptable trade-off for ~18% less
-  ///    wasted space on every other Pokemon.
+  /// Removes white/near-white background pixels with soft alpha fade.
+  /// Edge trimming is handled visually by PokemonImage widget.
   static _ProcessingOutput? _processPixels(_ProcessingInput input) {
     final pixels = input.pixels;
     final width = input.width;
@@ -141,37 +136,12 @@ class ImageProcessor {
 
     if (!hasContent) return null;
 
-    // Step 2: Uniform trim — remove 22px from each edge.
-    // This is safe for 95% of Pokemon and preserves relative sizing.
-    const int trim = 22;
-    final newWidth = width - trim * 2;
-    final newHeight = height - trim * 2;
-
-    // Only trim if the image is large enough (artwork ~475x475)
-    if (newWidth <= 0 || newHeight <= 0 || width < trim * 4) {
-      return _ProcessingOutput(
-        pixels: pixels,
-        width: width,
-        height: height,
-      );
-    }
-
-    final trimmedPixels = Uint8List(newWidth * newHeight * 4);
-    for (int y = 0; y < newHeight; y++) {
-      final srcOffset = ((y + trim) * width + trim) * 4;
-      final dstOffset = y * newWidth * 4;
-      trimmedPixels.setRange(
-        dstOffset,
-        dstOffset + newWidth * 4,
-        pixels,
-        srcOffset,
-      );
-    }
-
+    // Edge trimming is handled visually by PokemonImage widget
+    // (ClipRect + Transform.scale) so we return the full canvas here.
     return _ProcessingOutput(
-      pixels: trimmedPixels,
-      width: newWidth,
-      height: newHeight,
+      pixels: pixels,
+      width: width,
+      height: height,
     );
   }
 

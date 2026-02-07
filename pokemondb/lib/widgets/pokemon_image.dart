@@ -7,9 +7,15 @@ import '../utils/image_processor.dart';
 const _spriteBase =
     'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
 
+/// Artwork images from PokeAPI are 475x475 with large transparent margins.
+/// We visually trim 22px from each edge (475→431) by scaling up and clipping.
+/// This constant is the scale factor: 475 / (475 - 22*2) = 475/431.
+const _artworkTrimScale = 475.0 / 431.0;
+
 /// Unified widget for displaying Pokemon images throughout the app.
 ///
 /// Handles:
+/// - Visual edge trimming on artwork (always, to cut dead space)
 /// - Transparent background processing (when enabled in settings)
 /// - Default Pokeball error/fallback icon
 /// - Artwork vs sprite URL generation from a Pokemon ID
@@ -72,10 +78,11 @@ class _PokemonImageState extends State<PokemonImage> {
   Uint8List? _processedBytes;
   String? _loadedUrl;
 
+  bool get _isArtwork => widget.imageUrl.contains('official-artwork');
+
   /// Only process artwork images — sprites are already tight pixel art.
   bool get _shouldProcess =>
-      AppState().transparentBackgrounds &&
-      widget.imageUrl.contains('official-artwork');
+      AppState().transparentBackgrounds && _isArtwork;
 
   @override
   void initState() {
@@ -111,28 +118,44 @@ class _PokemonImageState extends State<PokemonImage> {
         color: widget.fallbackIconColor ?? Colors.white.withOpacity(0.3),
       );
 
+  /// Wraps artwork in ClipRect + Transform.scale to visually trim 22px
+  /// from each edge. Sprites pass through untouched.
+  Widget _applyArtworkTrim(Widget child) {
+    if (!_isArtwork) return child;
+    return ClipRect(
+      child: Transform.scale(
+        scale: _artworkTrimScale,
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_shouldProcess && _processedBytes != null) {
-      return Image.memory(
-        _processedBytes!,
+      return _applyArtworkTrim(
+        Image.memory(
+          _processedBytes!,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          filterQuality: widget.filterQuality,
+          isAntiAlias: widget.isAntiAlias,
+          errorBuilder: (_, __, ___) => _fallbackIcon(),
+        ),
+      );
+    }
+
+    return _applyArtworkTrim(
+      Image.network(
+        widget.imageUrl,
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
         filterQuality: widget.filterQuality,
         isAntiAlias: widget.isAntiAlias,
         errorBuilder: (_, __, ___) => _fallbackIcon(),
-      );
-    }
-
-    return Image.network(
-      widget.imageUrl,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      filterQuality: widget.filterQuality,
-      isAntiAlias: widget.isAntiAlias,
-      errorBuilder: (_, __, ___) => _fallbackIcon(),
+      ),
     );
   }
 }
