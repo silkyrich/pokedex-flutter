@@ -241,16 +241,21 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                             ),
                           ] : null,
                         ),
-                        child: Image.network(
-                          // Always use official artwork - scales better than sprites
-                          widget.pokemon.imageUrl,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.medium,
-                          isAntiAlias: true,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.catching_pokemon,
-                            size: useTinyText ? 20 : useCompactText ? 40 : 60,
-                            color: Colors.white.withOpacity(0.3),
+                        child: ClipRect(
+                          child: Transform.scale(
+                            scale: 475 / 431, // Trim 22px border from PokeAPI artwork
+                            child: Image.network(
+                              // Always use official artwork - scales better than sprites
+                              widget.pokemon.imageUrl,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.medium,
+                              isAntiAlias: true,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.catching_pokemon,
+                                size: useTinyText ? 20 : useCompactText ? 40 : 60,
+                                color: Colors.white.withOpacity(0.3),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -655,12 +660,17 @@ class _PokemonCardState extends State<PokemonCard> with SingleTickerProviderStat
                       ),
                     ],
                   ),
-                  child: Image.network(
-                    // Always use official artwork
-                    widget.pokemon.imageUrl,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.medium,
-                    isAntiAlias: true,
+                  child: ClipRect(
+                    child: Transform.scale(
+                      scale: 475 / 431, // Trim 22px border from PokeAPI artwork
+                      child: Image.network(
+                        // Always use official artwork
+                        widget.pokemon.imageUrl,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.medium,
+                        isAntiAlias: true,
+                      ),
+                    ),
                   ),
                 ),
               ),
