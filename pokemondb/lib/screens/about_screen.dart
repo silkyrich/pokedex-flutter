@@ -1,8 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  Map<String, dynamic>? _versionInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final jsonString = await rootBundle.loadString('version.json');
+      final json = jsonDecode(jsonString);
+      if (mounted) {
+        setState(() {
+          _versionInfo = json;
+        });
+      }
+    } catch (e) {
+      // version.json not found, that's okay
+    }
+  }
 
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
@@ -205,6 +234,50 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(height: 24),
+
+                // Version info
+                if (_versionInfo != null)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.03)
+                            : Colors.grey.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.06)
+                              : Colors.grey.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Version ${_versionInfo!['version']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Build ${_versionInfo!['gitCommitShort']} • ${_formatBuildTime(_versionInfo!['buildTime'])}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: colorScheme.onSurface.withOpacity(0.3),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                 const SizedBox(height: 40),
               ],
             ),
@@ -212,6 +285,16 @@ class AboutScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatBuildTime(String? isoTime) {
+    if (isoTime == null) return 'unknown';
+    try {
+      final dt = DateTime.parse(isoTime);
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return isoTime;
+    }
   }
 }
 
