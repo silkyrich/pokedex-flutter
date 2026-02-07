@@ -234,7 +234,9 @@ function buildOgHtml({ title, description, image, url, twitterCard, playerUrl, p
 
 // --- Embed page builder for Twitter player card ---
 
-function buildEmbedHtml(info) {
+function buildEmbedHtml(info, options = {}) {
+  const { shiny = false } = options;
+
   const typeColors = {
     normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
     grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
@@ -246,6 +248,9 @@ function buildEmbedHtml(info) {
   const primaryColor = typeColors[info.types[0].toLowerCase()] || '#777';
   const heightM = (info.height / 10).toFixed(1);
   const weightKg = (info.weight / 10).toFixed(1);
+
+  // Shiny effect: hue rotation varies by type for better results
+  const shinyFilter = shiny ? 'hue-rotate(180deg) saturate(1.4) brightness(1.15)' : 'none';
 
   return new Response(
     `<!DOCTYPE html>
@@ -340,7 +345,30 @@ function buildEmbedHtml(info) {
     .artwork img {
       max-width: 90%;
       max-height: 90%;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)) ${shinyFilter};
+      transition: filter 0.3s ease;
+    }
+
+    /* Shiny badge */
+    .shiny-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      color: #333;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(255,215,0,0.4);
+      letter-spacing: 0.5px;
+    }
+
+    /* Sparkle effect */
+    .shiny-badge::before {
+      content: '✨';
+      margin-right: 4px;
     }
 
     /* Stats */
@@ -458,6 +486,8 @@ function buildEmbedHtml(info) {
 <body>
   <div class="card">
     <div class="card-inner">
+      ${shiny ? '<div class="shiny-badge">Shiny</div>' : ''}
+
       <div class="header">
         <div class="name">${info.name}</div>
         <div class="hp"><span style="font-size:18px">HP</span> ${info.stats.hp}</div>
@@ -515,7 +545,7 @@ function buildEmbedHtml(info) {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
         'Cache-Control': 'public, max-age=3600',
-        'X-Frame-Options': 'ALLOW-FROM https://twitter.com',
+        // No frame restrictions - allow embedding anywhere
       },
     }
   );
@@ -568,8 +598,8 @@ async function handlePokemonRoute(id, context) {
     // Twitter player card for interactive embed
     twitterCard: 'player',
     playerUrl: `${SITE_URL}/embed/pokemon/${id}`,
-    playerWidth: '520',
-    playerHeight: '730',
+    playerWidth: '480',
+    playerHeight: '480',
   });
 }
 
@@ -628,14 +658,18 @@ export async function onRequest(context) {
       return new Response('Pokemon not found', { status: 404 });
     }
 
+    // Check for variant query params
+    const isShiny = url.searchParams.get('shiny') === 'true';
+
     // Track embed view
     logAnalytics(context, {
       event: 'embed_view',
       pokemon_id: id,
       pokemon_name: info.name,
+      variant: isShiny ? 'shiny' : 'normal',
     });
 
-    return buildEmbedHtml(info);
+    return buildEmbedHtml(info, { shiny: isShiny });
   }
 
   // Only intercept other GET requests from crawlers
