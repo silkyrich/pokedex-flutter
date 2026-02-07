@@ -515,8 +515,7 @@ function buildEmbedHtml(info) {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
         'Cache-Control': 'public, max-age=3600',
-        // Allow embedding in Twitter/X iframes
-        'Content-Security-Policy': "frame-ancestors 'self' https://twitter.com https://x.com https://*.twitter.com https://*.x.com",
+        // No frame restrictions - allow embedding anywhere
       },
     }
   );
@@ -569,8 +568,8 @@ async function handlePokemonRoute(id, context) {
     // Twitter player card for interactive embed
     twitterCard: 'player',
     playerUrl: `${SITE_URL}/embed/pokemon/${id}`,
-    playerWidth: '520',
-    playerHeight: '730',
+    playerWidth: '480',
+    playerHeight: '480',
   });
 }
 
