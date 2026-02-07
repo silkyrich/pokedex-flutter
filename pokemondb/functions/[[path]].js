@@ -515,7 +515,8 @@ function buildEmbedHtml(info) {
       headers: {
         'Content-Type': 'text/html;charset=UTF-8',
         'Cache-Control': 'public, max-age=3600',
-        'X-Frame-Options': 'ALLOW-FROM https://twitter.com',
+        // Allow embedding in Twitter/X iframes
+        'Content-Security-Policy': "frame-ancestors 'self' https://twitter.com https://x.com https://*.twitter.com https://*.x.com",
       },
     }
   );
