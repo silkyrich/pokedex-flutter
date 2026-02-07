@@ -1,27 +1,29 @@
 /**
  * DexGuide — Cloudflare Pages Function (catch-all)
  *
- * Runs on every request to dexguide.gg. Three jobs:
+ * Runs on every request to dexguide.gg. Four jobs:
  *
- * 1. CRAWLER REQUESTS: Returns a small HTML page with correct Open Graph
+ * 1. OG IMAGE GENERATION: /og/pokemon/:id.png renders a beautiful
+ *    type-colored card image via satori + resvg (workers-og). Cached
+ *    at the edge for 7 days. Used as og:image for rich link previews.
+ *
+ * 2. CRAWLER REQUESTS: Returns a small HTML page with correct Open Graph
  *    meta tags so link previews in iMessage, Slack, Discord, Twitter,
  *    Facebook etc. show the right Pokemon artwork, name, and stats.
  *
- * 2. ANALYTICS TRACKING: Logs every OG card view with rich metadata
+ * 3. ANALYTICS TRACKING: Logs every OG card view with rich metadata
  *    (Pokemon ID, types, BST, social platform, country) for measuring
  *    viral spread and understanding sharing patterns.
  *
- * 3. REGULAR USERS: Falls through to static assets. If no static file
+ * 4. REGULAR USERS: Falls through to static assets. If no static file
  *    matches (SPA deep link like /pokemon/6), the _redirects rule
  *    serves index.html so Flutter's router handles it client-side.
- *
- * TODO: Generate custom OG images with gold Pokemon card border
- *       Currently using direct PokeAPI artwork URLs
- *       Could use Cloudflare Images API or Workers to add border
  *
  * No copyrighted assets stored — OG image URLs point to PokeAPI's
  * hosted artwork on GitHub.
  */
+
+import { ImageResponse, loadGoogleFont } from 'workers-og';
 
 const SITE_NAME = 'DexGuide';
 const SITE_URL = 'https://dexguide.gg';
@@ -195,6 +197,132 @@ async function fetchPokemonInfo(id) {
   } catch {
     return null;
   }
+}
+
+// --- OG image generation (satori + resvg via workers-og) ---
+
+const TYPE_COLORS = {
+  normal:   { bg: '#A8A77A', dark: '#6D6D4E' },
+  fire:     { bg: '#EE8130', dark: '#9C531F' },
+  water:    { bg: '#6390F0', dark: '#445E9C' },
+  electric: { bg: '#F7D02C', dark: '#A1871F' },
+  grass:    { bg: '#7AC74C', dark: '#4E8234' },
+  ice:      { bg: '#96D9D6', dark: '#638D8B' },
+  fighting: { bg: '#C22E28', dark: '#7D1F1A' },
+  poison:   { bg: '#A33EA1', dark: '#6B2669' },
+  ground:   { bg: '#E2BF65', dark: '#927D44' },
+  flying:   { bg: '#A98FF3', dark: '#6D5E9C' },
+  psychic:  { bg: '#F95587', dark: '#A13959' },
+  bug:      { bg: '#A6B91A', dark: '#6D7815' },
+  rock:     { bg: '#B6A136', dark: '#786824' },
+  ghost:    { bg: '#735797', dark: '#493963' },
+  dragon:   { bg: '#6F35FC', dark: '#4924A1' },
+  dark:     { bg: '#705746', dark: '#49392F' },
+  steel:    { bg: '#B7B7CE', dark: '#787887' },
+  fairy:    { bg: '#D685AD', dark: '#9B6470' },
+};
+
+/**
+ * Generates a 1200x630 PNG card image for a Pokemon.
+ * Used as og:image for rich link previews everywhere.
+ */
+async function generateOgImage(info) {
+  const primaryType = info.types[0].toLowerCase();
+  const secondaryType = info.types.length > 1 ? info.types[1].toLowerCase() : null;
+  const primary = TYPE_COLORS[primaryType] || TYPE_COLORS.normal;
+  const secondary = secondaryType ? (TYPE_COLORS[secondaryType] || primary) : primary;
+  const heightM = (info.height / 10).toFixed(1);
+  const weightKg = (info.weight / 10).toFixed(1);
+
+  const artworkUrl = ARTWORK_URL(info.id);
+
+  // Load two font weights for visual hierarchy
+  const [fontRegular, fontBold] = await Promise.all([
+    loadGoogleFont({ family: 'Inter', weight: 400 }),
+    loadGoogleFont({ family: 'Inter', weight: 700 }),
+  ]);
+
+  // Stat bar helper — returns an HTML string for a single stat row
+  const statBar = (label, value, max = 255) => {
+    const pct = Math.min((value / max) * 100, 100);
+    return `
+      <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+        <div style="display: flex; font-size: 16px; color: rgba(255,255,255,0.7); width: 36px; justify-content: flex-end;">${label}</div>
+        <div style="display: flex; flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden;">
+          <div style="display: flex; width: ${pct}%; height: 100%; background: white; border-radius: 4px;"></div>
+        </div>
+        <div style="display: flex; font-size: 18px; font-weight: 700; color: white; width: 36px;">${value}</div>
+      </div>`;
+  };
+
+  // Type badge helper
+  const typeBadge = (typeName) => {
+    const tc = TYPE_COLORS[typeName.toLowerCase()] || TYPE_COLORS.normal;
+    return `<div style="display: flex; background: ${tc.bg}; border: 2px solid rgba(255,255,255,0.4); border-radius: 20px; padding: 6px 18px; font-size: 18px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${typeName}</div>`;
+  };
+
+  const html = `
+    <div style="display: flex; width: 1200px; height: 630px; background: linear-gradient(135deg, ${primary.bg}, ${secondary.bg}, ${primary.dark}); font-family: 'Inter', sans-serif; color: white; position: relative; overflow: hidden;">
+
+      <!-- Subtle pokeball watermark -->
+      <div style="display: flex; position: absolute; top: -80px; right: -80px; width: 400px; height: 400px; border-radius: 200px; border: 40px solid rgba(255,255,255,0.06);"></div>
+      <div style="display: flex; position: absolute; top: 80px; right: 80px; width: 80px; height: 80px; border-radius: 40px; border: 20px solid rgba(255,255,255,0.06);"></div>
+
+      <!-- Left side: Info -->
+      <div style="display: flex; flex-direction: column; justify-content: center; padding: 56px 0 56px 56px; flex: 1;">
+
+        <!-- ID number -->
+        <div style="display: flex; font-size: 22px; color: rgba(255,255,255,0.5); font-weight: 700; margin-bottom: 4px;">#${String(info.id).padStart(3, '0')}</div>
+
+        <!-- Name -->
+        <div style="display: flex; font-size: 64px; font-weight: 700; color: white; margin-bottom: 16px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));">${info.name}</div>
+
+        <!-- Genus -->
+        ${info.genus ? `<div style="display: flex; font-size: 20px; color: rgba(255,255,255,0.7); margin-bottom: 20px; font-style: italic;">${info.genus}</div>` : ''}
+
+        <!-- Type badges -->
+        <div style="display: flex; gap: 10px; margin-bottom: 28px;">
+          ${info.types.map(t => typeBadge(t)).join('')}
+        </div>
+
+        <!-- Stats -->
+        <div style="display: flex; flex-direction: column; gap: 6px; width: 340px;">
+          ${statBar('HP', info.stats.hp)}
+          ${statBar('ATK', info.stats.attack)}
+          ${statBar('DEF', info.stats.defense)}
+          ${statBar('SPA', info.stats['special-attack'])}
+          ${statBar('SPD', info.stats['special-defense'])}
+          ${statBar('SPE', info.stats.speed)}
+        </div>
+
+        <!-- BST + physical -->
+        <div style="display: flex; gap: 16px; margin-top: 16px; font-size: 15px; color: rgba(255,255,255,0.5);">
+          <div style="display: flex;">BST ${info.bst}</div>
+          <div style="display: flex;">${heightM}m</div>
+          <div style="display: flex;">${weightKg}kg</div>
+        </div>
+      </div>
+
+      <!-- Right side: Artwork -->
+      <div style="display: flex; align-items: center; justify-content: center; width: 480px; padding: 40px;">
+        <img src="${artworkUrl}" width="400" height="400" style="display: flex; filter: drop-shadow(0 12px 32px rgba(0,0,0,0.5));" />
+      </div>
+
+      <!-- DexGuide branding bar -->
+      <div style="display: flex; position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: rgba(0,0,0,0.3); align-items: center; justify-content: space-between; padding: 0 56px;">
+        <div style="display: flex; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.6);">DexGuide</div>
+        <div style="display: flex; font-size: 14px; color: rgba(255,255,255,0.4);">dexguide.gg</div>
+      </div>
+    </div>`;
+
+  return new ImageResponse(html, {
+    width: 1200,
+    height: 630,
+    fonts: [
+      { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' },
+      { name: 'Inter', data: fontBold, weight: 700, style: 'normal' },
+    ],
+  });
 }
 
 // --- OG HTML builder ---
@@ -584,7 +712,7 @@ async function handlePokemonRoute(id, context) {
   return buildOgHtml({
     title: `${info.name} #${padId(info.id)} — ${SITE_NAME}`,
     description,
-    image: ARTWORK_URL(info.id),
+    image: `${SITE_URL}/og/pokemon/${info.id}.png`,
     url: `${SITE_URL}/pokemon/${id}`,
     twitterCard: 'summary_large_image',
   });
@@ -635,6 +763,42 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const path = url.pathname;
   let match;
+
+  // /og/pokemon/:id.png — Generated OG card image (serve to everyone)
+  match = path.match(/^\/og\/pokemon\/(\d+)\.png$/);
+  if (match && request.method === 'GET') {
+    const id = parseInt(match[1], 10);
+
+    // Check edge cache first
+    const cache = await caches.open('og-images');
+    const cacheKey = new Request(url.toString());
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+
+    const info = await fetchPokemonInfo(id);
+    if (!info) {
+      return new Response('Pokemon not found', { status: 404 });
+    }
+
+    logAnalytics(context, {
+      event: 'og_image_generate',
+      pokemon_id: id,
+      pokemon_name: info.name,
+    });
+
+    const imageResponse = await generateOgImage(info);
+
+    // Cache the PNG for 7 days at the edge
+    const response = new Response(await imageResponse.arrayBuffer(), {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=604800',
+      },
+    });
+
+    context.waitUntil(cache.put(cacheKey, response.clone()));
+    return response;
+  }
 
   // /embed/pokemon/:id - Twitter player card (serve to everyone, not just crawlers)
   match = path.match(/^\/embed\/pokemon\/(\d+)$/);
