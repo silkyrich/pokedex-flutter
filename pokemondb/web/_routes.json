@@ -3,10 +3,10 @@
   "include": [
     "/pokemon/*",
     "/embed/*",
-    "/battle/*/*"
+    "/battle/*/*",
+    "/api/*"
   ],
   "exclude": [
-    "/assets/*",
-    "/api/*"
+    "/assets/*"
   ]
 }
