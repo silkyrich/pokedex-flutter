@@ -1,16 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "Installing Flutter..."
-git clone https://github.com/flutter/flutter.git -b stable --depth 1
-export PATH="$PATH:`pwd`/flutter/bin"
-
-echo "Accepting Flutter licenses..."
-flutter doctor -v
-
-echo "Building Flutter web app..."
+echo "🔧 Starting DexGuide build..."
 cd pokemondb
-flutter pub get
+
+echo "📝 Generating version.json..."
+./scripts/generate_version.sh
+
+echo "🚀 Building Flutter web..."
 flutter build web --release
 
-echo "Build complete!"
+echo "✅ Build complete!"
