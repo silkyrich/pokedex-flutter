@@ -6,6 +6,7 @@
     "/battle/*/*"
   ],
   "exclude": [
-    "/assets/*"
+    "/assets/*",
+    "/api/*"
   ]
 }
