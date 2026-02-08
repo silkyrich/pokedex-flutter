@@ -14,18 +14,25 @@ if [ -z "$VERSION_JSON" ]; then
   exit 1
 fi
 
-# Extract key fields (try both formats - build-time and CF environment)
-DEPLOYED_COMMIT=$(echo "$VERSION_JSON" | grep -o '"gitCommitShort":"[^"]*"' | cut -d'"' -f4)
-if [ -z "$DEPLOYED_COMMIT" ]; then
-  # Fallback to CF commit SHA (full hash, will be truncated)
-  DEPLOYED_COMMIT=$(echo "$VERSION_JSON" | grep -o '"cfCommitSha":"[^"]*"' | cut -d'"' -f4 | cut -c1-7)
+# Extract key fields using jq if available, fallback to grep
+if command -v jq &> /dev/null; then
+  DEPLOYED_COMMIT=$(echo "$VERSION_JSON" | jq -r '.gitCommitShort // (.cfCommitSha // "unknown" | .[0:7])')
+  DEPLOYED_VERSION=$(echo "$VERSION_JSON" | jq -r '.version // ""')
+  DEPLOYED_TIME=$(echo "$VERSION_JSON" | jq -r '.buildTime // .deployedAt // ""')
+  ENVIRONMENT=$(echo "$VERSION_JSON" | jq -r '.environment // ""')
+else
+  # Fallback to grep (less reliable)
+  DEPLOYED_COMMIT=$(echo "$VERSION_JSON" | grep -o '"gitCommitShort":"[^"]*"' | cut -d'"' -f4)
+  if [ -z "$DEPLOYED_COMMIT" ]; then
+    DEPLOYED_COMMIT=$(echo "$VERSION_JSON" | grep -o '"cfCommitSha":"[^"]*"' | cut -d'"' -f4 | cut -c1-7)
+  fi
+  DEPLOYED_VERSION=$(echo "$VERSION_JSON" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
+  DEPLOYED_TIME=$(echo "$VERSION_JSON" | grep -o '"buildTime":"[^"]*"' | cut -d'"' -f4)
+  if [ -z "$DEPLOYED_TIME" ]; then
+    DEPLOYED_TIME=$(echo "$VERSION_JSON" | grep -o '"deployedAt":"[^"]*"' | cut -d'"' -f4)
+  fi
+  ENVIRONMENT=$(echo "$VERSION_JSON" | grep -o '"environment":"[^"]*"' | cut -d'"' -f4)
 fi
-DEPLOYED_VERSION=$(echo "$VERSION_JSON" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
-DEPLOYED_TIME=$(echo "$VERSION_JSON" | grep -o '"buildTime":"[^"]*"' | cut -d'"' -f4)
-if [ -z "$DEPLOYED_TIME" ]; then
-  DEPLOYED_TIME=$(echo "$VERSION_JSON" | grep -o '"deployedAt":"[^"]*"' | cut -d'"' -f4)
-fi
-ENVIRONMENT=$(echo "$VERSION_JSON" | grep -o '"environment":"[^"]*"' | cut -d'"' -f4)
 
 # Get local commit
 LOCAL_COMMIT=$(git rev-parse --short HEAD 2>/dev/null)
