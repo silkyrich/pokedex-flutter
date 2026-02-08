@@ -20,7 +20,4 @@ echo "🚀 Building Flutter web..."
 flutter pub get
 flutter build web --release
 
-echo "📁 Copying Functions to build output..."
-cp -r functions build/web/
-
 echo "✅ Build complete!"
