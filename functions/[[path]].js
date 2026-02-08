@@ -656,6 +656,11 @@ export async function onRequest(context) {
   const path = url.pathname;
   let match;
 
+  // Skip /api/* routes - let specific API functions handle them
+  if (path.startsWith('/api/')) {
+    return context.next();
+  }
+
   // /embed/pokemon/:id - Twitter player card (serve to everyone, not just crawlers)
   match = path.match(/^\/embed\/pokemon\/(\d+)$/);
   if (match && request.method === 'GET') {
