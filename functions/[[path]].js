@@ -659,10 +659,12 @@ export async function onRequest(context) {
   // Handle /api/version endpoint
   if (path === '/api/version') {
     try {
-      // Try to fetch the build-time generated version.json
+      // Fetch the build-time generated version.json
       let buildInfo = {};
       try {
-        const versionResponse = await context.env.ASSETS.fetch(new Request(`${url.origin}/version.json`));
+        const versionResponse = await fetch(`${url.origin}/version.json`, {
+          cf: { cacheTtl: 60 }
+        });
         if (versionResponse.ok) {
           buildInfo = await versionResponse.json();
         }
